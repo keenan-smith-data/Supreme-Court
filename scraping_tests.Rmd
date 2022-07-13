@@ -1,0 +1,60 @@
+---
+title: "Scraping Tests"
+author: "Keenan Smith"
+date: '2022-07-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library Initiation}
+library(tidyverse)
+library(rvest)
+```
+
+
+```{r Functions}
+# Generic Opinion Pull (Mainly used for Testing)
+american_mind_pull <- function(hyperlink) {
+  temp <- rvest::read_html(hyperlink)
+  opinion_text <-
+    temp |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::slice(1:(n() - 8)) |>
+    na.omit() |>
+    dplyr::rename(text = value)
+  return(opinion_text)
+}
+```
+
+
+```{r Testing Web Scrape}
+test_html <- "https://americanmind.org/memo/after-roe/"
+
+test_html2 <- "https://americanmind.org/memo/the-origins-of-the-new-right-and-its-future/"
+
+test_stuff <- tibble(text = character())
+
+testing <- american_mind_pull(test_html)
+```
+
+
+```{r}
+library(tidytext)
+
+testing <-
+  testing |>
+  unnest_tokens(word, text)
+
+clean_test <-
+  testing |>
+  anti_join(get_stopwords())
+
+clean_test |>
+  count(word, sort = TRUE)
+```
+
