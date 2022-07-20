@@ -1,0 +1,179 @@
+---
+title: "Sitemap Cleaning"
+author: "Keenan Smith"
+date: '2022-07-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library Initiation}
+library(tidyverse)
+```
+
+```{r Right Websites Usable Links, eval=FALSE, include=FALSE}
+nr_pol_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/nationalreviewpol.csv", delim = ";", show_col_types = FALSE)
+
+nr_pol <-
+  nr_pol_raw |>
+  filter(
+    str_detect(urlname, "wp-content", negate = TRUE),
+    str_detect(url, "com/20")
+  ) |>
+  transmute(url) |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(nr_pol, "data/nationalreview_pol_policy.rds", "gz", compression = 9L)
+
+nr_law_courts_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/nationalreviewlawcourts.csv", delim = ";", show_col_types = FALSE)
+
+nr_law_courts <-
+  nr_law_courts_raw |>
+  filter(
+    str_detect(urlname, "wp-content", negate = TRUE),
+    str_detect(url, "com/20")
+  ) |>
+  transmute(url) |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(nr_law_courts, "data/nationalreview_law_courts.rds", "gz", compression = 9L)
+```
+
+```{r Left Websites Usable Links}
+jacobin_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/jacobinblog.csv", delim = ";", show_col_types = FALSE)
+
+jacobin <-
+  jacobin_raw |>
+  filter(
+    valid == TRUE,
+    size > 1,
+    is.na(infostring),
+    str_detect(url, "wp-content", negate = TRUE),
+    str_detect(url, "jacobin\\.com/20"),
+    str_detect(url, "format", negate = TRUE),
+    str_detect(url, "category", negate = TRUE),
+    str_detect(url, "jpg", negate = TRUE),
+    str_detect(url, "png", negate = TRUE),
+    str_detect(url, "gif", negate = TRUE),
+    str_detect(url, "com$", negate = TRUE),
+    str_detect(url, "\\?", negate = TRUE)
+  )
+
+jacobin_mod <-
+  jacobin |>
+  distinct(url)
+
+jacobin_mod <-
+  jacobin_mod |>
+  mutate(year = as.numeric(str_extract(url, "\\d\\d\\d\\d"))) |>
+  filter(year > 2018) |>
+  arrange(desc(year))
+
+write_rds(jacobin_mod, "data/jacobin.rds", "gz", compression = 9L)
+
+thenation_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/thenationpolitics.csv", delim = ";", show_col_types = FALSE)
+
+thenation <-
+  thenation_raw |>
+  filter(
+    valid == TRUE,
+    size > 1,
+    is.na(infostring),
+    str_detect(url, "wp-", negate = TRUE),
+    str_detect(url, "thenation\\.com/article"),
+    str_detect(url, "com$", negate = TRUE),
+    str_detect(url, "/feed/$", negate = TRUE),
+    str_detect(url, "html$", negate = TRUE),
+    str_detect(url, "tnamp/$", negate = TRUE),
+    str_detect(url, "#", negate = TRUE),
+    str_detect(url, "\\?", negate = TRUE),
+    str_detect(url, "%", negate = TRUE)
+  )
+
+thenation_mod <-
+  thenation |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(thenation_mod, "data/thenation.rds", "gz", compression = 9L)
+```
+
+```{r Claremont Websites Usable Links}
+features_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/americanmindfeatures.csv", delim = ";", show_col_types = FALSE)
+
+memos_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/americanmindmemos.csv", delim = ";", show_col_types = FALSE)
+
+salvos_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/americanmindsalvos.csv", delim = ";", show_col_types = FALSE)
+
+claremont_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/claremontreviewessays.csv", delim = ";", show_col_types = FALSE)
+
+features <-
+  features_raw |>
+  filter(
+    valid == TRUE,
+    size > 1,
+    str_detect(url, "americanmind\\.org/features/"),
+    str_detect(url, "oembed", negate = TRUE),
+    str_detect(url, "twitter", negate = TRUE),
+    str_detect(url, "features/$", negate = TRUE),
+    str_detect(url, "\\.com$", negate = TRUE),
+    str_detect(url, "google\\.com/", negate = TRUE)
+    ) |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(features, "data/americanmindfeatures.rds", "gz", compression = 9L)
+
+memos <-
+  memos_raw |>
+  filter(
+    valid == TRUE,
+   str_detect(url, "org/memo/")
+   ) |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(memos, "data/americanmindmemos.rds", "gz", compression = 9L)
+
+salvos <-
+  salvos_raw |>
+  filter(
+    valid == TRUE,
+    str_detect(url, "org/salvo/")) |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(salvos, "data/americanmindsalvos.rds", "gz", compression = 9L)
+
+claremont <-
+  claremont_raw |>
+  filter(
+    valid == TRUE,
+    str_detect(url, "claremontreviewofbooks\\.com"),
+    str_detect(url, "/auth", negate = TRUE),
+    str_detect(url, "/issue", negate = TRUE),
+    str_detect(url, "/article", negate = TRUE),
+    str_detect(url, "/subscribe", negate = TRUE),
+    str_detect(url, "/podcast/", negate = TRUE),
+    str_detect(url, "/donate", negate = TRUE),
+    str_detect(url, "/advertising/", negate = TRUE),
+    str_detect(url, "/archive", negate = TRUE),
+    str_detect(url, "/faqs/", negate = TRUE),
+    str_detect(url, "/about-us/", negate = TRUE),
+    str_detect(url, "/my-account/", negate = TRUE),
+    str_detect(url, "/contact-us/", negate = TRUE),
+    str_detect(url, "/digital-exclusive/", negate = TRUE),
+    str_detect(url, "/publication-committee/", negate = TRUE),
+    str_detect(url, "com/$", negate = TRUE),
+    str_detect(url, "com$", negate = TRUE),
+    str_detect(url, "wp-", negate = TRUE)
+  ) |>
+  distinct(url) |>
+  arrange(url)
+
+write_rds(claremont, "data/claremontreviewessays.rds", "gz", compression = 9L)
+```

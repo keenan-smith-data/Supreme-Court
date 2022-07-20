@@ -34,8 +34,8 @@ cons_opinion_pull <- function(hyperlink, title) {
     rvest::html_nodes("p") |>
     rvest::html_text2() |>
     dplyr::as_tibble()
-  csv_title <- stringr::str_c("conservative_opinions/", title, ".csv")
-  readr::write_csv(opinion_text, file = csv_title)
+  rds_title <- stringr::str_c("conservative_opinions/", title, ".rds")
+  readr::write_rds(opinion_text, file = rds_title, "gz", compression = 9L)
   return(opinion_text)
 }
 
@@ -47,8 +47,8 @@ lib_opinion_pull <- function(hyperlink, title) {
     rvest::html_nodes("p") |>
     rvest::html_text2() |>
     dplyr::as_tibble()
-  csv_title <- stringr::str_c("liberal_opinions/", title, ".csv")
-  readr::write_csv(opinion_text, file = csv_title)
+  rds_title <- stringr::str_c("liberal_opinions/", title, ".rds")
+  readr::write_rds(opinion_text, file = rds_title, "gz", compression = 9L)
   return(opinion_text)
 }
 
@@ -60,8 +60,8 @@ opinion_pull <- function(hyperlink, title) {
     rvest::html_nodes("p") |>
     rvest::html_text2() |>
     dplyr::as_tibble()
-  csv_title <- stringr::str_c("opinions/", title, ".csv")
-  readr::write_csv(opinion_text, file = csv_title)
+  rds_title <- stringr::str_c("opinions/", title, ".rds")
+  readr::write_rds(opinion_text, file = rds_title, "gz", compression = 9L)
   return(opinion_text)
 }
 
@@ -91,7 +91,7 @@ func_test <- opinion_pull(test_html, "test")
 
 
 ```{r Importing Extracted Court Case Links & Tidying Scraped Data}
-links_cases <- read_csv("court_cases_links_all.csv", show_col_types = FALSE)
+links_cases <- read_csv("data/court_cases_links_all.csv", show_col_types = FALSE)
 
 column_names <- LETTERS[seq(from = 1, to = 30)]
 
@@ -186,12 +186,12 @@ links_cases_final <-
   transmute(link, case_titles_combined, year, case_titles, docket_join) |>
   mutate(year = lubridate::year(lubridate::ymd(year, truncated = 2L)))
 
-write_csv(links_cases_final, "links_cases_final.csv")
+write_rds(links_cases_final, "data/links_cases_final.rds", "gz", compression = 9L)
 ```
 
 ```{r}
 # Reading in Corgis Data
-supreme_court <- read_csv("supreme_court.csv")
+supreme_court <- read_csv("data/supreme_court.csv", show_col_types = FALSE)
 
 # Modifying Docket on Corgis to match formatting for Join Purposes
 sc_edit <-
@@ -210,7 +210,7 @@ Source for "supreme_court" read in data. A series of information about Supreme C
 
 # Since Final Links have been defined in a previous block
 # Final Links is loaded from the CSV to allow for this code to be run separately
-final_links <- read_csv("links_cases_final.csv")
+final_links <- read_rds("data/links_cases_final.rds")
 
 # Joining Corgis Dataset to Final Links
 final <-
@@ -218,7 +218,7 @@ final <-
   inner_join(sc_edit, by = "docket_join")
 
 # Writing Joined Data Set to CSV for inspection
-write_csv(final, "sc_edit_joined.csv")
+write_rds(final, "data/sc_edit_joined.rds", "gz", compression = 9L)
 
 # Seperating Judgements into Ideology based on the Corgis dataset
 conservative_judgement <-

@@ -1,5 +1,5 @@
 ---
-title: "Scraping Tests"
+title: "Sitemap Cleaning"
 author: "Keenan Smith"
 date: '2022-07-10'
 output: html_document
@@ -12,42 +12,143 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Library Initiation}
 library(tidyverse)
 library(rvest)
+library(polite)
+library(RSelenium)
+library(tidytext)
 ```
 
 
 ```{r Functions}
-# Generic Opinion Pull (Mainly used for Testing)
+# American Mind Article Pull
 american_mind_pull <- function(hyperlink) {
-  temp <- rvest::read_html(hyperlink)
-  opinion_text <-
+  session <- polite::bow(hyperlink)
+  temp <- polite::scrape(session)
+  text_data <-
     temp |>
+    rvest::html_nodes(".tam__single-content-output") |>
     rvest::html_nodes("p") |>
     rvest::html_text2() |>
     dplyr::as_tibble() |>
-    dplyr::slice(1:(n() - 8)) |>
-    na.omit() |>
     dplyr::rename(text = value)
-  return(opinion_text)
+  return(text_data)
+}
+
+am_mind_pull_wrap <- function(hyperlink) {
+  options(show.error.messages = FALSE)
+  try(american_mind_pull(hyperlink))
+}
+
+# Jacobin Article Pull
+jacobin_pull <- function(hyperlink) {
+  session <- polite::bow(hyperlink)
+  temp <- polite::scrape(session)
+  text_data <-
+    temp |>
+    rvest::html_elements("#post-content") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value)
+  return(text_data)
+}
+
+jac_pull_wrap <- function(hyperlink) {
+  options(show.error.messages = FALSE)
+  try(jacobin_pull(hyperlink))
+}
+
+# Heritage Article Pull
+heritage_pull <- function(hyperlink) {
+  session <- polite::bow(hyperlink)
+  temp <- polite::scrape(session)
+  text_data <-
+    temp |>
+    rvest::html_nodes(".article__body-copy") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value)
+  return(text_data)
 }
 ```
 
 
-```{r Testing Web Scrape}
-test_html <- "https://americanmind.org/memo/after-roe/"
+```{r Testing R Selenium, eval=FALSE, include=FALSE}
+# National Review Article Pull
+# Not sure if it is worth the trouble
+national_review_pull <- function(hyperlink, browser_selenium) {
+  sel <- browser_selenium
+  sel$navigate(hyperlink)
+  Sys.sleep(2)
+  html <- sel$getPageSource()[[1]]
+  temp <- rvest::read_html(html)
+  text_data <-
+    temp |>
+    rvest::html_nodes(".section-content--article-content") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::slice(2:(n() - 1)) |>
+    dplyr::rename(text = value)
+  return(text_data)
+}
 
-test_html2 <- "https://americanmind.org/memo/the-origins-of-the-new-right-and-its-future/"
+rD <- rsDriver(browser = "firefox", verbose = F)
 
-test_stuff <- tibble(text = character())
+remDr <- rD[["client"]]
 
-testing <- american_mind_pull(test_html)
+remDr$closeall()
+rm(rD)
+gc(rD)
+
+nr_test <- "https://www.nationalreview.com/news/buffalo-shooter-indicted-on-federal-hate-crime-charges/"
+
+nr_testing <- national_review_pull(nr_test, remDr)
 ```
 
 
-```{r}
-library(tidytext)
+```{r Importing Cleaned Sitemaps}
+jacobin <- read_rds("data/jacobin.rds")
+thenation <- read_rds("data/thenation.rds")
+claremont <- read_rds("data/claremontreviewessays.rds")
+features <- read_rds("data/americanmindfeatures.rds")
+memos <- read_rds("data/americanmindmemos.rds")
+salvos <- read_rds("data/americanmindsalvos.rds")
+```
 
+```{r Testing Web Scrape}
+# test_html <- "https://americanmind.org/memo/after-roe/"
+
+# test_html2 <- "https://americanmind.org/memo/the-origins-of-the-new-right-and-its-future/"
+
+# testing <- american_mind_pull(test_html)
+
+jacobin_test_link <- "https://jacobin.com/2022/07/supreme-court-working-class-women-abortion-carceral-state-law"
+
+jacobin_test_link_2 <- "https://jacobin.com/2022/07/ukraine-russidwar-debt-forgiveness-us-eu"
+
+jac_test <- jac_pull_wrap(jacobin_test_link)
+jac_test_2 <- jac_pull_wrap(jacobin_test_link_2)
+```
+
+```{r}
+memo_text <- purrr::map_dfr(.x = memos$url, .f = am_mind_pull_wrap)
+salvo_text <- purrr::map_dfr(.x = salvos$url, .f = am_mind_pull_wrap)
+feature_text <- purrr::map_dfr(.x = features$url, .f = am_mind_pull_wrap)
+jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jac_pull_wrap)
+```
+
+```{r}
+write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
+write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
+write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
+write_rds(jacobin_text, "data/feature_text.rds", "gz", compression = 9L)
+```
+
+
+```{r Initial Tidy Text Looks, eval=FALSE, include=FALSE}
 testing <-
-  testing |>
+  memo_text |>
   unnest_tokens(word, text)
 
 clean_test <-
