@@ -142,7 +142,7 @@ jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jac_pull_wrap)
 write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
 write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
 write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
-write_rds(jacobin_text, "data/feature_text.rds", "gz", compression = 9L)
+write_rds(jacobin_text, "data/jacobin_text.rds", "gz", compression = 9L)
 ```
 
 
