@@ -1,7 +1,7 @@
 ---
-title: "Sitemap Cleaning"
+title: "Text Scraping"
 author: "Keenan Smith"
-date: '2022-07-10'
+date: '2022-07-200'
 output: html_document
 ---
 
@@ -123,39 +123,41 @@ salvos <- read_rds("data/americanmindsalvos.rds")
 
 # testing <- american_mind_pull(test_html)
 
-jacobin_test_link <- "https://jacobin.com/2022/07/supreme-court-working-class-women-abortion-carceral-state-law"
+# jacobin_test_link <- "https://jacobin.com/2022/07/supreme-court-working-class-women-abortion-carceral-state-law"
 
-jacobin_test_link_2 <- "https://jacobin.com/2022/07/ukraine-russidwar-debt-forgiveness-us-eu"
+# jacobin_test_link_2 <- "https://jacobin.com/2022/07/ukraine-russidwar-debt-forgiveness-us-eu"
 
-jac_test <- jac_pull_wrap(jacobin_test_link)
-jac_test_2 <- jac_pull_wrap(jacobin_test_link_2)
+# jac_test <- jac_pull_wrap(jacobin_test_link)
+# jac_test_2 <- jac_pull_wrap(jacobin_test_link_2)
 ```
 
 ```{r}
-memo_text <- purrr::map_dfr(.x = memos$url, .f = am_mind_pull_wrap)
-salvo_text <- purrr::map_dfr(.x = salvos$url, .f = am_mind_pull_wrap)
-feature_text <- purrr::map_dfr(.x = features$url, .f = am_mind_pull_wrap)
-jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jac_pull_wrap)
+# memo_text <- purrr::map_dfr(.x = memos$url, .f = am_mind_pull_wrap)
+# salvo_text <- purrr::map_dfr(.x = salvos$url, .f = am_mind_pull_wrap)
+# feature_text <- purrr::map_dfr(.x = features$url, .f = am_mind_pull_wrap)
+# jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jac_pull_wrap)
 ```
 
-```{r}
+```{r Adding Source and Writing Data to RDS, eval=FALSE, include=FALSE}
+memo_text <-
+  memo_text |>
+  mutate(text_source = "American Mind Memos")
+
+salvo_text <-
+  salvo_text |>
+  mutate(text_source = "American Mind Salvos")
+
+feature_text <-
+  feature_text |>
+  mutate(text_source = "American Mind Features")
+
+jacobin_text <-
+  jacobin_text |>
+  mutate(text_source = "Jacobin")
+
 write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
 write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
 write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
 write_rds(jacobin_text, "data/jacobin_text.rds", "gz", compression = 9L)
-```
-
-
-```{r Initial Tidy Text Looks, eval=FALSE, include=FALSE}
-testing <-
-  memo_text |>
-  unnest_tokens(word, text)
-
-clean_test <-
-  testing |>
-  anti_join(get_stopwords())
-
-clean_test |>
-  count(word, sort = TRUE)
 ```
 
