@@ -13,7 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(rvest)
 library(polite)
-library(tidytext)
+library(future)
+library(furrr)
+
+no_cores <- availableCores() - 1
+plan(multisession, workers = no_cores)
 ```
 
 
@@ -52,9 +56,9 @@ american_mind_pull <- function(hyperlink) {
     dplyr::as_tibble() |>
     dplyr::rename(text = value) |>
     dplyr::mutate(
-      title = art_title,
-      author = art_author,
-      date = art_date
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date
     )
   return(text_data)
 }
@@ -68,12 +72,10 @@ am_mind_pull_try <- function(hyperlink) {
     error = function(cond) {
       message(paste("This URL has caused an error:", hyperlink))
       message(cond)
-      message("\n")
     },
     warning = function(cond) {
       message(paste("URL has a warning:", hyperlink))
       message(cond)
-      message("\n")
     },
     finally = {
       message(paste("Processed URL:", hyperlink))
@@ -114,9 +116,9 @@ jacobin_pull <- function(hyperlink) {
     dplyr::as_tibble() |>
     dplyr::rename(text = value) |>
     dplyr::mutate(
-      title = art_title,
-      author = art_author,
-      date = art_date
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date
     )
   return(text_data)
 }
@@ -142,12 +144,10 @@ jacobin_pull_try <- function(hyperlink) {
     error = function(cond) {
       message(paste("This URL has caused an error:", hyperlink))
       message(cond)
-      message("\n")
     },
     warning = function(cond) {
       message(paste("URL has a warning:", hyperlink))
       message(cond)
-      message("\n")
     },
     finally = {
       message(paste("Processed URL:", hyperlink))
@@ -168,40 +168,6 @@ heritage_pull <- function(hyperlink) {
     dplyr::rename(text = value)
   return(text_data)
 }
-```
-
-
-```{r Testing R Selenium, eval=FALSE, include=FALSE}
-# National Review Article Pull
-# Not sure if it is worth the trouble
-national_review_pull <- function(hyperlink, browser_selenium) {
-  sel <- browser_selenium
-  sel$navigate(hyperlink)
-  Sys.sleep(2)
-  html <- sel$getPageSource()[[1]]
-  temp <- rvest::read_html(html)
-  text_data <-
-    temp |>
-    rvest::html_nodes(".section-content--article-content") |>
-    rvest::html_nodes("p") |>
-    rvest::html_text2() |>
-    dplyr::as_tibble() |>
-    dplyr::slice(2:(n() - 1)) |>
-    dplyr::rename(text = value)
-  return(text_data)
-}
-
-rD <- rsDriver(browser = "firefox", verbose = F)
-
-remDr <- rD[["client"]]
-
-remDr$closeall()
-rm(rD)
-gc(rD)
-
-nr_test <- "https://www.nationalreview.com/news/buffalo-shooter-indicted-on-federal-hate-crime-charges/"
-
-nr_testing <- national_review_pull(nr_test, remDr)
 ```
 
 
@@ -237,7 +203,7 @@ jac_test_3 <- jacobin_pull_try(jacobin_test_3)
 ```
 
 ```{r}
-# memo_text <- purrr::map_dfr(.x = memos$url, .f = am_mind_pull_try)
+memo_text <- furrr::future_map_dfr(.x = memos$url, .f = am_mind_pull_try)
 # salvo_text <- purrr::map_dfr(.x = salvos$url, .f = am_mind_pull_try)
 # feature_text <- purrr::map_dfr(.x = features$url, .f = am_mind_pull_try)
 # jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jacobin_pull_try)
