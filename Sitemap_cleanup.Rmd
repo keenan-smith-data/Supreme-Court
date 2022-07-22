@@ -43,24 +43,21 @@ nr_law_courts <-
 write_rds(nr_law_courts, "data/nationalreview_law_courts.rds", "gz", compression = 9L)
 ```
 
-```{r Left Websites Usable Links}
-jacobin_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/jacobinblog.csv", delim = ";", show_col_types = FALSE)
+```{r Left Websites Usable Links, eval=FALSE}
+jacobin_raw <- read_rds("C:/Users/slaps/OneDrive/Documents/Programming/Data/jacobin_unfiltered.rds")
 
+jacobin_exclude <- c(
+  "wp-content", "format", "category", "jpg", "png", "gif",
+  "com$", "\\?"
+)
 jacobin <-
   jacobin_raw |>
   filter(
     valid == TRUE,
     size > 1,
     is.na(infostring),
-    str_detect(url, "wp-content", negate = TRUE),
     str_detect(url, "jacobin\\.com/20"),
-    str_detect(url, "format", negate = TRUE),
-    str_detect(url, "category", negate = TRUE),
-    str_detect(url, "jpg", negate = TRUE),
-    str_detect(url, "png", negate = TRUE),
-    str_detect(url, "gif", negate = TRUE),
-    str_detect(url, "com$", negate = TRUE),
-    str_detect(url, "\\?", negate = TRUE)
+    str_detect(url, paste(jacobin_exclude, collapse = "|"), negate = TRUE)
   )
 
 jacobin_mod <-
@@ -75,7 +72,12 @@ jacobin_mod <-
 
 write_rds(jacobin_mod, "data/jacobin.rds", "gz", compression = 9L)
 
-thenation_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/thenationpolitics.csv", delim = ";", show_col_types = FALSE)
+thenation_raw <- read_rds("C:/Users/slaps/OneDrive/Documents/Programming/Data/thenation_unfilted.rds")
+
+thenation_exclude <- c(
+  "wp-", "com$", "/feed/$", "html$", "tnamp/$", "#",
+  "\\?", "%"
+)
 
 thenation <-
   thenation_raw |>
@@ -83,15 +85,8 @@ thenation <-
     valid == TRUE,
     size > 1,
     is.na(infostring),
-    str_detect(url, "wp-", negate = TRUE),
     str_detect(url, "thenation\\.com/article"),
-    str_detect(url, "com$", negate = TRUE),
-    str_detect(url, "/feed/$", negate = TRUE),
-    str_detect(url, "html$", negate = TRUE),
-    str_detect(url, "tnamp/$", negate = TRUE),
-    str_detect(url, "#", negate = TRUE),
-    str_detect(url, "\\?", negate = TRUE),
-    str_detect(url, "%", negate = TRUE)
+    str_detect(url, paste(thenation_exclude, collapse = "|"), negate = TRUE)
   )
 
 thenation_mod <-
@@ -102,7 +97,7 @@ thenation_mod <-
 write_rds(thenation_mod, "data/thenation.rds", "gz", compression = 9L)
 ```
 
-```{r Claremont Websites Usable Links}
+```{r Claremont Websites Usable Links, eval=FALSE}
 features_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/americanmindfeatures.csv", delim = ";", show_col_types = FALSE)
 
 memos_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/americanmindmemos.csv", delim = ";", show_col_types = FALSE)
@@ -111,18 +106,16 @@ salvos_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/ame
 
 claremont_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/claremontreviewessays.csv", delim = ";", show_col_types = FALSE)
 
+features_exclude <- c("oembed", "twitter", "features/$", "\\.com$", "google\\.com/")
+
 features <-
   features_raw |>
   filter(
     valid == TRUE,
     size > 1,
     str_detect(url, "americanmind\\.org/features/"),
-    str_detect(url, "oembed", negate = TRUE),
-    str_detect(url, "twitter", negate = TRUE),
-    str_detect(url, "features/$", negate = TRUE),
-    str_detect(url, "\\.com$", negate = TRUE),
-    str_detect(url, "google\\.com/", negate = TRUE)
-    ) |>
+    str_detect(url, paste(features_exclude, collapse = "|"), negate = TRUE)
+  ) |>
   distinct(url) |>
   arrange(url)
 
@@ -132,8 +125,8 @@ memos <-
   memos_raw |>
   filter(
     valid == TRUE,
-   str_detect(url, "org/memo/")
-   ) |>
+    str_detect(url, "org/memo/")
+  ) |>
   distinct(url) |>
   arrange(url)
 
@@ -143,37 +136,68 @@ salvos <-
   salvos_raw |>
   filter(
     valid == TRUE,
-    str_detect(url, "org/salvo/")) |>
+    str_detect(url, "org/salvo/")
+  ) |>
   distinct(url) |>
   arrange(url)
 
 write_rds(salvos, "data/americanmindsalvos.rds", "gz", compression = 9L)
+
+claremont_exclude <- c(
+  "/auth", "/issue", "/article", "/subscribe", "/podcast/",
+  "/donate", "/advertising/", "/archive", "/faqs/",
+  "/about-us/", "/my-account/", "/contact-us/", "/digital-exclusive/",
+  "/publication-committee/", "com/$", "com$", "wp-"
+)
+
 
 claremont <-
   claremont_raw |>
   filter(
     valid == TRUE,
     str_detect(url, "claremontreviewofbooks\\.com"),
-    str_detect(url, "/auth", negate = TRUE),
-    str_detect(url, "/issue", negate = TRUE),
-    str_detect(url, "/article", negate = TRUE),
-    str_detect(url, "/subscribe", negate = TRUE),
-    str_detect(url, "/podcast/", negate = TRUE),
-    str_detect(url, "/donate", negate = TRUE),
-    str_detect(url, "/advertising/", negate = TRUE),
-    str_detect(url, "/archive", negate = TRUE),
-    str_detect(url, "/faqs/", negate = TRUE),
-    str_detect(url, "/about-us/", negate = TRUE),
-    str_detect(url, "/my-account/", negate = TRUE),
-    str_detect(url, "/contact-us/", negate = TRUE),
-    str_detect(url, "/digital-exclusive/", negate = TRUE),
-    str_detect(url, "/publication-committee/", negate = TRUE),
-    str_detect(url, "com/$", negate = TRUE),
-    str_detect(url, "com$", negate = TRUE),
-    str_detect(url, "wp-", negate = TRUE)
+    str_detect(url, paste(claremont_exclude, collapse = "|"), negate = TRUE)
   ) |>
   distinct(url) |>
   arrange(url)
 
 write_rds(claremont, "data/claremontreviewessays.rds", "gz", compression = 9L)
+```
+
+
+```{r Heritage Website Usable Links}
+# heritage_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/heritage.csv", delim = ";", show_col_types = FALSE)
+
+# write_rds(heritage_raw, "C:/Users/slaps/OneDrive/Documents/Programming/Data/heritage.rds", "gz", compression = 9L)
+
+heritage_raw <- read_rds("C:/Users/slaps/OneDrive/Documents/Programming/Data/heritage.rds")
+
+heritage_exclude <- c("mailto", "staff", "wp-", "\\.com", "html$", "#", "\\?", "%", "=")
+heritage_include <- c("commentary", "report")
+
+heritage <-
+  heritage_raw |>
+  filter(
+    valid == TRUE,
+    str_detect(infostring, "denied", negate = TRUE),
+    str_detect(url, "www\\.heritage\\.org"),
+    str_detect(url, paste(heritage_exclude, collapse = "|"), negate = TRUE),
+    str_detect(url, paste(heritage_include, collapse = "|"))
+  )
+
+heritage_final <-
+  heritage |>
+  distinct(url) |>
+  arrange(url)
+
+heritage_commentary <-
+  heritage_final |>
+  filter(str_detect(url, "commentary"))
+
+heritage_report <-
+  heritage_final |>
+  filter(str_detect(url, "report"))
+
+write_rds(heritage_commentary, "data/heritage_commentary.rds", "gz", compression = 9L)
+write_rds(heritage_report, "data/heritage_report.rds", "gz", compression = 9L)
 ```

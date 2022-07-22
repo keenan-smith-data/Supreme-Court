@@ -13,11 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(rvest)
 library(polite)
-library(future)
-library(furrr)
-
-no_cores <- availableCores() - 1
-plan(multisession, workers = no_cores)
 ```
 
 
@@ -26,6 +21,7 @@ plan(multisession, workers = no_cores)
 american_mind_pull <- function(hyperlink) {
   session <- polite::bow(hyperlink)
   temp <- polite::scrape(session)
+  art_link <- hyperlink
   art_title <-
     temp |>
     rvest::html_elements(css = ".tam__single-header-title") |>
@@ -58,7 +54,8 @@ american_mind_pull <- function(hyperlink) {
     dplyr::mutate(
       art_title = art_title,
       art_author = art_author,
-      art_date = art_date
+      art_date = art_date,
+      art_link = art_link
     )
   return(text_data)
 }
@@ -87,6 +84,7 @@ am_mind_pull_try <- function(hyperlink) {
 jacobin_pull <- function(hyperlink) {
   session <- polite::bow(hyperlink)
   temp <- polite::scrape(session)
+  art_link <- hyperlink
   art_title <-
     temp |>
     rvest::html_elements(css = ".po-hr-cn__title") |>
@@ -118,7 +116,8 @@ jacobin_pull <- function(hyperlink) {
     dplyr::mutate(
       art_title = art_title,
       art_author = art_author,
-      art_date = art_date
+      art_date = art_date,
+      art_link = art_link
     )
   return(text_data)
 }
@@ -156,18 +155,127 @@ jacobin_pull_try <- function(hyperlink) {
 }
 
 # Heritage Article Pull
-heritage_pull <- function(hyperlink) {
+heritage_com_pull <- function(hyperlink) {
+  date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
   session <- polite::bow(hyperlink)
   temp <- polite::scrape(session)
+  art_link <- hyperlink
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".commentary__headline") |>
+    rvest::html_text2()
+  art_author <-
+    temp |>
+    rvest::html_nodes(".author-card__name") |>
+    rvest::html_text2()
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".article-general-info") |>
+    rvest::html_text2() |>
+    stringr::str_extract(paste(date_formats, collapse = "|")) |>
+    lubridate::mdy()
   text_data <-
     temp |>
     rvest::html_nodes(".article__body-copy") |>
     rvest::html_nodes("p") |>
     rvest::html_text2() |>
     dplyr::as_tibble() |>
-    dplyr::rename(text = value)
+    dplyr::rename(text = value) |>
+    dplyr::mutate(
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date,
+      art_link = art_link
+    )
   return(text_data)
 }
+
+date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
+
+heritage_pull_test <- function(hyperlink) {
+  session <- polite::bow(hyperlink)
+  temp <- polite::scrape(session)
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".commentary__eyebrow") |>
+    rvest::html_text2() |>
+    stringr::str_subset("COMMENTARY", negate = TRUE)
+  return(art_title)
+}
+
+heritage_com_pull_try <- function(hyperlink) {
+  tryCatch(
+    expr = {
+      message(paste("Trying", hyperlink))
+      heritage_com_pull(hyperlink)
+    },
+    error = function(cond) {
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+    },
+    warning = function(cond) {
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+    },
+    finally = {
+      message(paste("Processed URL:", hyperlink))
+    }
+  )
+}
+
+# Heritage Article Pull
+heritage_rep_pull <- function(hyperlink) {
+  date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
+  session <- polite::bow(hyperlink)
+  temp <- polite::scrape(session)
+  art_link <- hyperlink
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".headline") |>
+    rvest::html_text2()
+  art_author <- "The Heritage Foundation"
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".article-general-info") |>
+    rvest::html_text2() |>
+    stringr::str_extract(paste(date_formats, collapse = "|")) |>
+    lubridate::mdy()
+  text_data <-
+    temp |>
+    rvest::html_nodes(".article__body-copy") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value) |>
+    dplyr::mutate(
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date,
+      art_link = art_link
+    )
+  return(text_data)
+}
+
+heritage_rep_pull_try <- function(hyperlink) {
+  tryCatch(
+    expr = {
+      message(paste("Trying", hyperlink))
+      heritage_rep_pull(hyperlink)
+    },
+    error = function(cond) {
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+    },
+    warning = function(cond) {
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+    },
+    finally = {
+      message(paste("Processed URL:", hyperlink))
+    }
+  )
+}
+
 ```
 
 
@@ -178,6 +286,8 @@ claremont <- read_rds("data/claremontreviewessays.rds")
 features <- read_rds("data/americanmindfeatures.rds")
 memos <- read_rds("data/americanmindmemos.rds")
 salvos <- read_rds("data/americanmindsalvos.rds")
+heritage_commentary <- read_rds("data/heritage_commentary.rds")
+heritage_report <- read_rds("data/heritage_report.rds")
 ```
 
 ```{r Testing Web Scrape}
@@ -200,13 +310,24 @@ jacobin_test_3 <- "https://jacobin.com/2022/06/american-exceptionalism-off-the-r
 jac_test <- jacobin_pull_try(jacobin_test_link)
 jac_test_2 <- jacobin_pull_try(jacobin_test_link_2)
 jac_test_3 <- jacobin_pull_try(jacobin_test_3)
+
+heritage_com_test_link <- "https://www.heritage.org/agriculture/commentary/conservative-farm-bill-must-include-major-subsidy-and-regulatory-reforms"
+heritage_com_test_link_2 <- "https://www.heritage.org/africa/commentary/kenyan-forces-are-allowing-money-flow-terrorist-group-somalia"
+
+heritage_report_link <- "https://www.heritage.org/agriculture/report/10-policy-recommendations-the-2018-farm-bill"
+
+her_test <- heritage_com_pull_try(heritage_com_test_link)
+her_test_2 <- heritage_com_pull_try(heritage_com_test_link_2)
+her_rep_test <- heritage_rep_pull_try(heritage_report_link)
 ```
 
 ```{r}
-memo_text <- furrr::future_map_dfr(.x = memos$url, .f = am_mind_pull_try)
-# salvo_text <- purrr::map_dfr(.x = salvos$url, .f = am_mind_pull_try)
-# feature_text <- purrr::map_dfr(.x = features$url, .f = am_mind_pull_try)
-# jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jacobin_pull_try)
+memo_text <- purrr::map_dfr(.x = memos$url, .f = am_mind_pull_try)
+salvo_text <- purrr::map_dfr(.x = salvos$url, .f = am_mind_pull_try)
+feature_text <- purrr::map_dfr(.x = features$url, .f = am_mind_pull_try)
+jacobin_text <- purrr::map_dfr(.x = jacobin$url, .f = jacobin_pull_try)
+heritage_com_text <- purrr::map_dfr(.x = heritage_commentary$url, .f = heritage_com_pull_try)
+heritage_rep_text <- purrr::map_dfr(.x = heritage_report$url, .f = heritage_rep_pull_try)
 ```
 
 ```{r Adding Source and Writing Data to RDS, eval=FALSE, include=FALSE}
@@ -226,8 +347,18 @@ jacobin_text <-
   jacobin_text |>
   mutate(text_source = "Jacobin")
 
+heritage_com_text <-
+  heritage_com_text |>
+  mutate(text_source = "Heritage Commentary")
+
+heritage_rep_text <-
+  heritage_rep_text |>
+  mutate(text_source = "Heritage Report")
+
 write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
 write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
 write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
 write_rds(jacobin_text, "data/jacobin_text.rds", "gz", compression = 9L)
+write_rds(heritage_com_text, "data/heritage_com_text.rds", "gz", compression = 9L)
+write_rds(heritage_rep_text, "data/heritage_rep_text.rds", "gz", compression = 9L)
 ```
