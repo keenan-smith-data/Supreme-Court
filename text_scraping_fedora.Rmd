@@ -1,0 +1,438 @@
+---
+title: "Text Scraping"
+author: "Keenan Smith"
+date: '2022-07-200'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library Initiation}
+library(tidyverse)
+library(rvest)
+```
+
+
+```{r Functions}
+data_split <- function(data, n_groups = 10) {
+  temp <- data
+  temp$group <- 1:nrow(temp) %% n_groups + 1
+  temp_list <- split(temp, temp$group)
+  return(temp_list)
+}
+
+# American Mind Article Pull
+american_mind_pull <- function(hyperlink) {
+  temp <- rvest::read_html(hyperlink)
+  art_link <- hyperlink
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".tam__single-header-title") |>
+    rvest::html_text2()
+  art_author <-
+    temp |>
+    rvest::html_elements(css = ".tam__single-header-author") |>
+    rvest::html_nodes("a") |>
+    rvest::html_text2()
+  if (length(art_author) > 1) {
+    art_author = paste(art_author, collapse = ", ")
+  } else if (length(art_author) == 1) {
+    art_author = art_author
+  } else {
+    art_author = NA
+  }
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".tam__single-header-meta-date") |>
+    rvest::html_text2() |>
+    stringr::str_replace("\\.", "/") |>
+    lubridate::mdy()
+  text_data <-
+    temp |>
+    rvest::html_nodes(".tam__single-content-output") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value) |>
+    dplyr::mutate(
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date,
+      art_link = art_link
+    )
+  return(text_data)
+}
+
+am_mind_pull_try <- function(hyperlink) {
+  tryCatch(
+    expr = {
+      message(paste("Trying", hyperlink))
+      american_mind_pull(hyperlink)
+    },
+    error = function(cond) {
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+    },
+    warning = function(cond) {
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+    },
+    finally = {
+      message(paste("Processed URL:", hyperlink))
+      Sys.sleep(5)
+    }
+  )
+}
+
+# Jacobin Article Pull
+jacobin_pull <- function(hyperlink) {
+  temp <- rvest::read_html(hyperlink)
+  art_link <- hyperlink
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".po-hr-cn__title") |>
+    rvest::html_text2()
+  art_author <-
+    temp |>
+    rvest::html_elements(css = ".po-hr-cn__author-link") |>
+    rvest::html_text2()
+  if (length(art_author) > 1) {
+    art_author = paste(art_author, collapse = ", ")
+  } else if (length(art_author) == 1) {
+    art_author = art_author
+  } else {
+    art_author = NA
+  }
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".po-hr-fl__date") |>
+    rvest::html_text2() |>
+    stringr::str_replace("\\.", "/") |>
+    lubridate::mdy()
+  text_data <-
+    temp |>
+    rvest::html_element(css = "#post-content") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value) |>
+    dplyr::mutate(
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date,
+      art_link = art_link
+    )
+  return(text_data)
+}
+
+jacobin_pull_tests <- function(hyperlink) {
+  session <- read_html(hyperlink)
+  return(session)
+}
+
+jacobin_pull_try <- function(hyperlink) {
+  tryCatch(
+    expr = {
+      message(paste("Trying", hyperlink))
+      jacobin_pull(hyperlink)
+    },
+    error = function(cond) {
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+    },
+    warning = function(cond) {
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+    },
+    finally = {
+      message(paste("Processed URL:", hyperlink))
+      Sys.sleep(5)
+    }
+  )
+}
+
+# Heritage Article Pull
+heritage_com_pull <- function(hyperlink) {
+  date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
+  authors <- c(".author-card__name", "author-card__multi-name")
+  temp <- rvest::read_html(hyperlink)
+  art_link <- hyperlink
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".commentary__headline") |>
+    rvest::html_text2()
+  art_author_1 <-
+    temp |>
+    rvest::html_nodes(".author-card__name") |>
+    rvest::html_text2()
+  art_author_2 <-
+    temp |>
+    rvest::html_nodes(".author-card__multi-name") |>
+    rvest::html_text2()
+  art_author <- c(art_author_1, art_author_2)
+  if (length(art_author) > 1) {
+    art_author = paste(art_author, collapse = ", ")
+  } else if (length(art_author) == 1) {
+    art_author = art_author
+  } else {
+    art_author = NA
+  }
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".article-general-info") |>
+    rvest::html_text2() |>
+    stringr::str_extract(paste(date_formats, collapse = "|")) |>
+    lubridate::mdy()
+  text_data <-
+    temp |>
+    rvest::html_nodes(".article__body-copy") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value) |>
+    dplyr::mutate(
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date,
+      art_link = art_link
+    )
+  return(text_data)
+}
+
+heritage_pull_test <- function(hyperlink) {
+  authors <- c(".author-card__name", ".author-card__multi-name")
+  temp <- rvest::read_html(hyperlink)
+  art_author_1 <-
+    temp |>
+    rvest::html_nodes(".author-card__name") |>
+    rvest::html_text2()
+  art_author_2 <-
+    temp |>
+    rvest::html_nodes(".author-card__multi-name") |>
+    rvest::html_text2()
+  art_author <- c(art_author_1, art_author_2)
+  if (length(art_author) > 1) {
+    art_author = paste(art_author, collapse = ", ")
+  } else if (length(art_author) == 1) {
+    art_author = art_author
+  } else {
+    art_author = NA
+  }
+  return(art_author)
+}
+
+heritage_com_pull_try <- function(hyperlink) {
+  tryCatch(
+    expr = {
+      message(paste("Trying", hyperlink))
+      heritage_com_pull(hyperlink)
+    },
+    error = function(cond) {
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+    },
+    warning = function(cond) {
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+    },
+    finally = {
+      message(paste("Processed URL:", hyperlink))
+      Sys.sleep(5)
+    }
+  )
+}
+
+# Heritage Article Pull
+heritage_rep_pull <- function(hyperlink) {
+  date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
+  temp <- rvest::read_html(hyperlink)
+  art_link <- hyperlink
+  art_title <-
+    temp |>
+    rvest::html_elements(css = ".headline") |>
+    rvest::html_text2()
+  art_author <- "The Heritage Foundation"
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".article-general-info") |>
+    rvest::html_text2() |>
+    stringr::str_extract(paste(date_formats, collapse = "|")) |>
+    lubridate::mdy()
+  text_data <-
+    temp |>
+    rvest::html_nodes(".article__body-copy") |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble() |>
+    dplyr::rename(text = value) |>
+    dplyr::mutate(
+      art_title = art_title,
+      art_author = art_author,
+      art_date = art_date,
+      art_link = art_link
+    )
+  return(text_data)
+}
+
+heritage_rep_pull_try <- function(hyperlink) {
+  tryCatch(
+    expr = {
+      message(paste("Trying", hyperlink))
+      heritage_rep_pull(hyperlink)
+    },
+    error = function(cond) {
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+    },
+    warning = function(cond) {
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+    },
+    finally = {
+      message(paste("Processed URL:", hyperlink))
+      Sys.sleep(5)
+    }
+  )
+}
+```
+
+
+```{r Importing Cleaned Sitemaps}
+jacobin <- read_rds("data/jacobin.rds")
+thenation <- read_rds("data/thenation.rds")
+claremont <- read_rds("data/claremontreviewessays.rds")
+features <- read_rds("data/americanmindfeatures.rds")
+memos <- read_rds("data/americanmindmemos.rds")
+salvos <- read_rds("data/americanmindsalvos.rds")
+heritage_commentary <- read_rds("data/heritage_commentary.rds")
+heritage_report <- read_rds("data/heritage_report.rds")
+
+jacobin_list <- data_split(jacobin)
+heritage_com_list <- data_split(heritage_commentary)
+heritage_rep_list <- data_split(heritage_report)
+
+numbers <- c(1:10)
+
+jacobin_order <- sample(numbers, 10)
+heritage_order <- sample(numbers, 10)
+
+j_1 <- jacobin_list[[jacobin_order[1]]]$url
+j_2 <- jacobin_list[[jacobin_order[1]]]$url
+j_3 <- jacobin_list[[jacobin_order[1]]]$url
+j_4 <- jacobin_list[[jacobin_order[1]]]$url
+j_5 <- jacobin_list[[jacobin_order[1]]]$url
+j_6 <- jacobin_list[[jacobin_order[1]]]$url
+j_7 <- jacobin_list[[jacobin_order[1]]]$url
+j_8 <- jacobin_list[[jacobin_order[1]]]$url
+j_9 <- jacobin_list[[jacobin_order[1]]]$url
+j_10 <- jacobin_list[[jacobin_order[1]]]$url
+
+h_com_1 <- heritage_com_list[[heritage_order[1]]]$url
+h_com_2 <- heritage_com_list[[heritage_order[2]]]$url
+h_com_3 <- heritage_com_list[[heritage_order[3]]]$url
+h_com_4 <- heritage_com_list[[heritage_order[4]]]$url
+h_com_5 <- heritage_com_list[[heritage_order[5]]]$url
+h_com_6 <- heritage_com_list[[heritage_order[6]]]$url
+h_com_7 <- heritage_com_list[[heritage_order[7]]]$url
+h_com_8 <- heritage_com_list[[heritage_order[8]]]$url
+h_com_9 <- heritage_com_list[[heritage_order[9]]]$url
+h_com_10 <- heritage_com_list[[heritage_order[10]]]$url
+
+```
+
+```{r Test Links}
+am_mind_memo <- "https://americanmind.org/memo/after-roe/"
+am_mind_salvo <- "https://americanmind.org/salvo/the-appeal-of-ron-desantis/"
+am_mind_feature <- "https://americanmind.org/features/2018-fellowship-alumni-retreat/"
+
+jacobin_test_link <- "https://jacobin.com/2022/07/we-still-have-to-take-donald-trump-seriously"
+jacobin_test_link_2 <- "https://jacobin.com/2022/07/ukraine-russia-war-debt-forgiveness-us-eu"
+jacobin_test_link_3 <- "https://jacobin.com/2022/06/american-exceptionalism-off-the-rails"
+
+heritage_com_test_link <- "https://www.heritage.org/agriculture/commentary/conservative-farm-bill-must-include-major-subsidy-and-regulatory-reforms"
+heritage_com_test_link_2 <- "https://www.heritage.org/africa/commentary/kenyan-forces-are-allowing-money-flow-terrorist-group-somalia"
+heritage_com_test_link_3 <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-egregious-errors-award-prize-new-york-times-fatally"
+
+heritage_report_link <- "https://www.heritage.org/agriculture/report/10-policy-recommendations-the-2018-farm-bill"
+```
+
+
+```{r Testing Web Scrapes}
+am_mind_test <- am_mind_pull_try(am_mind_memo)
+am_mind_test_2 <- am_mind_pull_try(am_mind_salvo)
+am_mind_test_3 <- am_mind_pull_try(am_mind_feature)
+
+jac_test <- jacobin_pull_tests(jacobin_test_link)
+jac_test_2 <- jacobin_pull_try(jacobin_test_link_2)
+jac_test_3 <- jacobin_pull_try(jacobin_test_3)
+
+her_test <- heritage_com_pull_try(heritage_com_test_link)
+her_test_2 <- heritage_com_pull_try(heritage_com_test_link_2)
+her_rep_test <- heritage_rep_pull_try(heritage_report_link)
+```
+
+```{r}
+am_mind_test <- c(am_mind_memo, am_mind_feature, am_mind_salvo)
+jac_test_links <- c(jacobin_test_link, jacobin_test_link_2, jacobin_test_link_3)
+her_test_links <- c(heritage_com_test_link, heritage_com_test_link_2, heritage_com_test_link_3)
+```
+
+
+
+```{r}
+for (i in numbers) {
+  jacobin_text <- tibble(text = c(), art_title = c(), art_author = c(), art_date = c(), art_link = c())
+  heritage_com_text <- tibble()
+  heritage_rep_text <- tibble()
+  jacobin_list[[jacobin_order[i]]]$url
+  heritage_com_list[[heritage_order[i]]]$url
+  heritage_rep_list[[heritage_order[i]]]$url
+}
+memo_text <- map_dfr(.x = memos$url, .f = am_mind_pull_try)
+
+heritage_com_text <- furrr::future_map_dfr(.x = heritage_com_list[[heritage_com_order[1]]]$url, .f = heritage_com_pull_try)
+
+salvo_text <- map_dfr(.x = salvos$url, .f = am_mind_pull_try)
+
+# jacobin_text <- map_dfr(.x = jacobin$url, .f = jacobin_pull_try)
+
+feature_text <- map_dfr(.x = features$url, .f = am_mind_pull_try)
+
+# heritage_rep_text <- future_map_dfr(.x = heritage_report$url, .f = heritage_rep_pull_try)
+```
+
+
+```{r Adding Source and Writing Data to RDS, eval=FALSE, include=FALSE}
+memo_text <-
+  memo_text |>
+  mutate(text_source = "American Mind Memos")
+
+salvo_text <-
+  salvo_text |>
+  mutate(text_source = "American Mind Salvos")
+
+feature_text <-
+  feature_text |>
+  mutate(text_source = "American Mind Features")
+
+jacobin_text <-
+  jacobin_text |>
+  mutate(text_source = "Jacobin")
+
+heritage_com_text <-
+  heritage_com_text |>
+  mutate(text_source = "Heritage Commentary")
+
+heritage_rep_text <-
+  heritage_rep_text |>
+  mutate(text_source = "Heritage Report")
+
+write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
+write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
+write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
+write_rds(jacobin_text, "data/jacobin_text.rds", "gz", compression = 9L)
+write_rds(heritage_com_text, "data/heritage_com_text.rds", "gz", compression = 9L)
+write_rds(heritage_rep_text, "data/heritage_rep_text.rds", "gz", compression = 9L)
+```

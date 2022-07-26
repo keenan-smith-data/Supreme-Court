@@ -40,7 +40,7 @@ pages <- c(2:1227)
 for (page in pages) {
   temp <- str_c(search_page, page)
   court <- read_html(temp)
-  extract <-  
+  extract <-
     court |>
     html_elements("tbody") |>
     html_elements("a") |>
