@@ -132,7 +132,7 @@ jacobin_pull_tests <- function(hyperlink) {
   return(session)
 }
 
-jacobin_pull_try <- function(hyperlink) {
+j_pull_try <- function(hyperlink) {
   tryCatch(
     expr = {
       message(paste("Trying", hyperlink))
@@ -223,7 +223,7 @@ heritage_pull_test <- function(hyperlink) {
   return(art_author)
 }
 
-heritage_com_pull_try <- function(hyperlink) {
+h_com_pull_try <- function(hyperlink) {
   tryCatch(
     expr = {
       message(paste("Trying", hyperlink))
@@ -276,7 +276,7 @@ heritage_rep_pull <- function(hyperlink) {
   return(text_data)
 }
 
-heritage_rep_pull_try <- function(hyperlink) {
+h_rep_pull_try <- function(hyperlink) {
   tryCatch(
     expr = {
       message(paste("Trying", hyperlink))
@@ -301,61 +301,104 @@ heritage_rep_pull_try <- function(hyperlink) {
 
 ```{r Importing Cleaned Sitemaps}
 jacobin <- read_rds("data/jacobin.rds")
-thenation <- read_rds("data/thenation.rds")
-claremont <- read_rds("data/claremontreviewessays.rds")
+# thenation <- read_rds("data/thenation.rds")
+# claremont <- read_rds("data/claremontreviewessays.rds")
 features <- read_rds("data/americanmindfeatures.rds")
 memos <- read_rds("data/americanmindmemos.rds")
 salvos <- read_rds("data/americanmindsalvos.rds")
-heritage_commentary <- read_rds("data/heritage_commentary.rds")
-heritage_report <- read_rds("data/heritage_report.rds")
-
-jacobin_list <- data_split(jacobin)
-heritage_com_list <- data_split(heritage_commentary)
-heritage_rep_list <- data_split(heritage_report)
-
-numbers <- c(1:10)
-
-jacobin_order <- sample(numbers, 10)
-heritage_order <- sample(numbers, 10)
-
-j_1 <- jacobin_list[[jacobin_order[1]]]$url
-j_2 <- jacobin_list[[jacobin_order[1]]]$url
-j_3 <- jacobin_list[[jacobin_order[1]]]$url
-j_4 <- jacobin_list[[jacobin_order[1]]]$url
-j_5 <- jacobin_list[[jacobin_order[1]]]$url
-j_6 <- jacobin_list[[jacobin_order[1]]]$url
-j_7 <- jacobin_list[[jacobin_order[1]]]$url
-j_8 <- jacobin_list[[jacobin_order[1]]]$url
-j_9 <- jacobin_list[[jacobin_order[1]]]$url
-j_10 <- jacobin_list[[jacobin_order[1]]]$url
-
-h_com_1 <- heritage_com_list[[heritage_order[1]]]$url
-h_com_2 <- heritage_com_list[[heritage_order[2]]]$url
-h_com_3 <- heritage_com_list[[heritage_order[3]]]$url
-h_com_4 <- heritage_com_list[[heritage_order[4]]]$url
-h_com_5 <- heritage_com_list[[heritage_order[5]]]$url
-h_com_6 <- heritage_com_list[[heritage_order[6]]]$url
-h_com_7 <- heritage_com_list[[heritage_order[7]]]$url
-h_com_8 <- heritage_com_list[[heritage_order[8]]]$url
-h_com_9 <- heritage_com_list[[heritage_order[9]]]$url
-h_com_10 <- heritage_com_list[[heritage_order[10]]]$url
-
+h_commentary <- read_rds("data/heritage_commentary.rds")
+h_report <- read_rds("data/heritage_report.rds")
 ```
 
+
 ```{r Test Links}
-am_mind_memo <- "https://americanmind.org/memo/after-roe/"
-am_mind_salvo <- "https://americanmind.org/salvo/the-appeal-of-ron-desantis/"
-am_mind_feature <- "https://americanmind.org/features/2018-fellowship-alumni-retreat/"
+j_tl <- "https://jacobin.com/2022/07/we-still-have-to-take-donald-trump-seriously"
+j_tl_2 <- "https://jacobin.com/2022/07/ukraine-russia-war-debt-forgiveness-us-eu"
+j_tl_3 <- "https://jacobin.com/2022/06/american-exceptionalism-off-the-rails"
+j_tl_wrong <- "https://jacobin.com/2022/06/american-exceptionae-off-the-rails"
 
-jacobin_test_link <- "https://jacobin.com/2022/07/we-still-have-to-take-donald-trump-seriously"
-jacobin_test_link_2 <- "https://jacobin.com/2022/07/ukraine-russia-war-debt-forgiveness-us-eu"
-jacobin_test_link_3 <- "https://jacobin.com/2022/06/american-exceptionalism-off-the-rails"
+h_com_tl <- "https://www.heritage.org/agriculture/commentary/conservative-farm-bill-must-include-major-subsidy-and-regulatory-reforms"
+h_com_tl_2 <- "https://www.heritage.org/africa/commentary/kenyan-forces-are-allowing-money-flow-terrorist-group-somalia"
+h_com_tl_3 <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-egregious-errors-award-prize-new-york-times-fatally"
+h_com_tl_wrong <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-eggious-errors-award-prize-new-york-times-fatally"
 
-heritage_com_test_link <- "https://www.heritage.org/agriculture/commentary/conservative-farm-bill-must-include-major-subsidy-and-regulatory-reforms"
-heritage_com_test_link_2 <- "https://www.heritage.org/africa/commentary/kenyan-forces-are-allowing-money-flow-terrorist-group-somalia"
-heritage_com_test_link_3 <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-egregious-errors-award-prize-new-york-times-fatally"
+h_rep_tl <- "https://www.heritage.org/agriculture/report/10-policy-recommendations-the-2018-farm-bill"
+h_rep_tl_2 <- "https://www.heritage.org/american-founders/report/independence-forever-the-225th-anniversary-the-fourth-july"
+h_rep_tl_3 <- "https://www.heritage.org/arms-control/report/arms-control-the-heritage-foundation-recommendations"
+h_rep_tl_wrong <- "https://www.heritage.org/arms-control/report/arms-cont-the-heritage-foundation-recommendations"
 
-heritage_report_link <- "https://www.heritage.org/agriculture/report/10-policy-recommendations-the-2018-farm-bill"
+j_test_vec <- c(j_tl, j_tl_2, j_tl_3)
+h_com_test_vec <- c(h_com_tl, h_com_tl_2, h_com_tl_3)
+h_rep_test_vec <- c(h_rep_tl, h_rep_tl_2, h_rep_tl_3)
+
+j_test_wrong <- c(j_tl_wrong, j_tl, j_tl_2, j_tl_3)
+h_com_test_wrong <- c(h_com_tl_wrong, h_com_tl, h_com_tl_2, h_com_tl_3)
+h_rep_test_wrong <- c(h_rep_tl_wrong, h_rep_tl, h_rep_tl_2, h_rep_tl_3)
+```
+
+
+<https://stackoverflow.com/questions/29402528/append-data-frames-together-in-a-for-loop>
+Absolute Legend of Help for R ways of doing loops
+
+```{r Testing Iterations}
+j_data_list <- list()
+h_com_data_list <- list()
+h_rep_data_list <- list()
+
+for (i in 1:3) {
+  j_test_df <- j_pull_try(j_test_vec[i])
+  j_test_df$i <- i
+  j_data_list[[i]] <- j_test_df
+  
+  h_com_test_df <- h_com_pull_try(h_com_test_vec[i])
+  h_com_test_df$i <- i
+  h_com_data_list[[i]] <- h_com_test_df
+  
+  h_rep_test_df <- h_rep_pull_try(h_rep_test_vec[i])
+  h_rep_test_df$i <- i
+  h_rep_data_list[[i]] <- h_rep_test_df
+}
+
+j_text_test <- bind_rows(j_data_list)
+h_com_text_test <- bind_rows(h_com_data_list)
+h_rep_text_test <- bind_rows(h_rep_data_list)
+```
+
+
+```{r}
+j_wrong <- list()
+h_com_wrong <- list()
+h_rep_wrong <- list()
+
+for (i in seq_along(j_test_wrong)) {
+  j_test_df_wrong <- j_pull_try(j_test_wrong[i])
+  j_test_df$i <- i
+  j_wrong[[i]] <- j_test_df_wrong
+  
+  h_com_test_df_wrong <- h_com_pull_try(h_com_test_wrong[i])
+  h_com_test_df_wrong$i <- i
+  h_com_wrong[[i]] <- h_com_test_df_wrong
+  
+  h_rep_test_df_wrong <- h_rep_pull_try(h_rep_test_wrong[i])
+  h_rep_test_df_wrong$i <- i
+  h_rep_wrong[[i]] <- h_rep_test_df_wrong
+}
+
+j_text_wrong <- bind_rows(j_wrong)
+h_com_text_wrong <- bind_rows(h_com_wrong)
+h_rep_text_wrong <- bind_rows(h_rep_wrong)
+```
+
+
+```{r Splitting and Sampling the Massive URL dataframes}
+numbers <- c(1:10)
+
+j_list <- data_split(jacobin)
+h_com_list <- data_split(h_commentary)
+h_rep_list <- data_split(h_report)
+
+h_order <- sample(numbers, 10)
+j_order <- sample(numbers, 10)
 ```
 
 
@@ -364,43 +407,49 @@ am_mind_test <- am_mind_pull_try(am_mind_memo)
 am_mind_test_2 <- am_mind_pull_try(am_mind_salvo)
 am_mind_test_3 <- am_mind_pull_try(am_mind_feature)
 
-jac_test <- jacobin_pull_tests(jacobin_test_link)
-jac_test_2 <- jacobin_pull_try(jacobin_test_link_2)
-jac_test_3 <- jacobin_pull_try(jacobin_test_3)
+jac_test <- j_pull_tests(j_tl)
+jac_test_2 <- j_pull_try(j_tl_2)
+jac_test_3 <- j_pull_try(j_tl_3)
 
-her_test <- heritage_com_pull_try(heritage_com_test_link)
-her_test_2 <- heritage_com_pull_try(heritage_com_test_link_2)
-her_rep_test <- heritage_rep_pull_try(heritage_report_link)
+her_test <- h_com_pull_try(h_com_tl)
+her_test_2 <- h_com_pull_try(h_com_tl_2)
+her_rep_test <- h_rep_pull_try(h_rep_l)
 ```
 
-```{r}
-am_mind_test <- c(am_mind_memo, am_mind_feature, am_mind_salvo)
-jac_test_links <- c(jacobin_test_link, jacobin_test_link_2, jacobin_test_link_3)
-her_test_links <- c(heritage_com_test_link, heritage_com_test_link_2, heritage_com_test_link_3)
+```{r Initiating Empty Lists for Loops}
+j_data_list <- list()
+h_com_data_list <- list()
+h_rep_data_list <- list()
 ```
 
 
-
-```{r}
-for (i in numbers) {
-  jacobin_text <- tibble(text = c(), art_title = c(), art_author = c(), art_date = c(), art_link = c())
-  heritage_com_text <- tibble()
-  heritage_rep_text <- tibble()
-  jacobin_list[[jacobin_order[i]]]$url
-  heritage_com_list[[heritage_order[i]]]$url
-  heritage_rep_list[[heritage_order[i]]]$url
-}
+```{r Massive Webscraping }
 memo_text <- map_dfr(.x = memos$url, .f = am_mind_pull_try)
-
-heritage_com_text <- furrr::future_map_dfr(.x = heritage_com_list[[heritage_com_order[1]]]$url, .f = heritage_com_pull_try)
 
 salvo_text <- map_dfr(.x = salvos$url, .f = am_mind_pull_try)
 
-# jacobin_text <- map_dfr(.x = jacobin$url, .f = jacobin_pull_try)
-
 feature_text <- map_dfr(.x = features$url, .f = am_mind_pull_try)
 
-# heritage_rep_text <- future_map_dfr(.x = heritage_report$url, .f = heritage_rep_pull_try)
+for (i in numbers) {
+  j_temp_df <- map_dfr(.x = j_list[[j_order[1]]]$url, .f = j_pull_try)
+  j_temp_df$i <- i
+  j_data_list[[i]] <- j_temp_df
+  
+  h_com_temp_df <- map_dfr(.x = h_com_list[[h_order[i]]]$url, .f = h_com_pull_try)
+  h_com_temp_df$i <- i
+  h_com_data_list[[i]] <- h_com_temp_df
+  
+  h_rep_temp_df <- map_dfr(.x = h_rep_list[[h_order[i]]]$url, .f = h_rep_pull_try)
+  h_rep_temp_df$i <- i
+  h_rep_data_list[[i]] <- h_rep_temp_df
+}
+```
+
+
+```{r Binding Data Lists Together into a giant data frame}
+jacobin_text <- bind_rows(j_data_list)
+h_com_text <- bind_rows(h_com_data_list)
+h_rep_text <- bind_rows(h_rep_data_list)
 ```
 
 
@@ -421,11 +470,11 @@ jacobin_text <-
   jacobin_text |>
   mutate(text_source = "Jacobin")
 
-heritage_com_text <-
+h_com_text <-
   heritage_com_text |>
   mutate(text_source = "Heritage Commentary")
 
-heritage_rep_text <-
+h_rep_text <-
   heritage_rep_text |>
   mutate(text_source = "Heritage Report")
 
@@ -433,6 +482,6 @@ write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
 write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
 write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
 write_rds(jacobin_text, "data/jacobin_text.rds", "gz", compression = 9L)
-write_rds(heritage_com_text, "data/heritage_com_text.rds", "gz", compression = 9L)
-write_rds(heritage_rep_text, "data/heritage_rep_text.rds", "gz", compression = 9L)
+write_rds(h_com_text, "data/heritage_com_text.rds", "gz", compression = 9L)
+write_rds(h_rep_text, "data/heritage_rep_text.rds", "gz", compression = 9L)
 ```
