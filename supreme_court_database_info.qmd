@@ -1,0 +1,141 @@
+---
+title: "Supreme Court Database Scrape"
+author: "Keenan Smith"
+format: html
+---
+
+```{r}
+#| label: Library Initiation
+
+library(tidyverse)
+library(rvest)
+```
+
+
+```{r}
+#| label: Reading Data in and sorting into usable products
+
+sc_db_sitemap <- read_delim("~/supremecourtdatabase.csv", delim = ";", show_col_types = FALSE)
+write_rds(sc_db_sitemap, "data/sc_db_sitemap.rds", "gz", compression = 9L)
+
+sc_db_sitemap_trim <-
+  sc_db_sitemap |>
+  filter(
+    str_detect(url, "supremecourtdatabase\\.org")
+  )
+
+sc_db_documentation <-
+  sc_db_sitemap_trim |>
+  filter(
+    str_detect(url, "documentation"),
+    str_detect(url, "var")
+  )
+
+sc_db_files_2021 <-
+  sc_db_sitemap_trim |>
+  filter(
+    str_detect(url, "_brickFiles/2021|/Legacy_06"),
+    str_detect(url, "\\.csv")
+  ) |>
+  transmute(url) |>
+  as_vector()
+
+hyperlink <- sc_db_files_2021[[1]] |>
+  str_split("/") |>
+  as_vector()
+
+```
+
+```{r}
+#| label: Functions
+
+sc_codes_pull <- function(hyperlink) {
+  temp_name <- hyperlink |>
+    stringr::str_split("=") |>
+    as_vector()
+  variable_name <- temp_name[[2]]  
+  temp <- xml2::read_html(hyperlink)
+  art_link <- hyperlink
+  text_data <-
+    temp |>
+    rvest::html_table()
+  if (length(text_data) == 9) {
+    id_table <- text_data[[6]]
+    colnames(id_table) <- c(variable_name, paste0(variable_name, "_value"))
+    index_title <- stringr::str_c("supreme_court_index/", variable_name, ".rds")
+    readr::write_rds(id_table, file = index_title, "gz", compression = 9L)
+  } else {
+    id_table <- "not applicable"
+  }
+  return(id_table)
+}
+
+sc_codes_test <- function(hyperlink) {
+  temp <- xml2::read_html(hyperlink)
+  art_link <- hyperlink
+  text_data <-
+    temp |>
+    rvest::html_table()
+  return(text_data)
+}
+
+sc_db_download <- function(hyperlink) {
+  modified_hyperlink <-
+    hyperlink |>
+    str_split("/") |>
+    as_vector()
+  title <- modified_hyperlink[[length(modified_hyperlink)]]
+  report_title <- stringr::str_c("~/supreme_court_db/", title)
+  download.file(hyperlink, report_title, mode = "wb")
+}
+```
+
+```{r}
+#| label: Testing Block
+#| eval: false
+
+petitioner <- "http://supremecourtdatabase.org/documentation.php?var=petitioner"
+
+case <- "http://supremecourtdatabase.org/documentation.php?var=caseName"
+
+state <- "http://supremecourtdatabase.org/documentation.php?var=respondentState"
+
+issue_area <- "http://supremecourtdatabase.org/documentation.php?var=issueArea"
+
+testing_3 <- sc_codes_test(state)
+
+state_table <- testing_3[[6]] |>
+  rename(id = X1,
+         respondentState = X2)
+
+hyperlink <- state |>
+  str_split("=") |>
+  as_vector()
+
+variable_name <- hyperlink[[2]]
+
+state_table <- testing_3[[6]]
+colnames(state_table) <- c("id", variable_name)
+
+testing_4 <- sc_codes_pull(issue_area)
+
+length(testing_4)
+```
+
+
+```{r}
+#| label: Pulling Zip Files from 2021
+#| eval: false
+
+for (i in seq_along(sc_db_files_2021)) {
+  download_link <- sc_db_files_2021[[i]]
+  sc_db_download(download_link)
+}
+```
+
+```{r}
+sc_indices <- purrr::map(.x = sc_db_documentation$url, .f = sc_codes_pull)
+
+write_rds(sc_indices, file = "supreme_court_index/master_indices_list.rds", "gz", compression = 9L)
+```
+

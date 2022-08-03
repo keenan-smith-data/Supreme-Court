@@ -1,0 +1,247 @@
+---
+title: "Supreme_Court_Initial_Look"
+author: "Keenan Smith"
+date: '2022-06-01'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library Initiation}
+library(tidyverse)
+library(rvest)
+library(parallel)
+library(doParallel)
+
+# Parallel R Set-Up
+ncores <- detectCores(logical = FALSE)
+cl <- makeCluster(ncores)
+```
+
+```{r Database Webscraping Script}
+# source("Supreme_Court_initial_webscrape.R")
+```
+
+
+```{r Functions}
+# Conservative Judgement Opinion Pull
+cons_opinion_pull <- function(hyperlink, title) {
+  temp <- rvest::read_html(hyperlink)
+  opinion_text <-
+    temp |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble()
+  rds_title <- stringr::str_c("conservative_opinions/", title, ".rds")
+  readr::write_rds(opinion_text, file = rds_title, "gz", compression = 9L)
+  return(opinion_text)
+}
+
+# Liberal Judgement Opinion Pull
+lib_opinion_pull <- function(hyperlink, title) {
+  temp <- rvest::read_html(hyperlink)
+  opinion_text <-
+    temp |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble()
+  rds_title <- stringr::str_c("liberal_opinions/", title, ".rds")
+  readr::write_rds(opinion_text, file = rds_title, "gz", compression = 9L)
+  return(opinion_text)
+}
+
+# Generic Opinion Pull (Mainly used for Testing)
+opinion_pull <- function(hyperlink, title) {
+  temp <- rvest::read_html(hyperlink)
+  opinion_text <-
+    temp |>
+    rvest::html_nodes("p") |>
+    rvest::html_text2() |>
+    dplyr::as_tibble()
+  rds_title <- stringr::str_c("opinions/", title, ".rds")
+  readr::write_rds(opinion_text, file = rds_title, "gz", compression = 9L)
+  return(opinion_text)
+}
+
+docket_isolation <- function(title, pattern) {
+  isolation <-
+    title |>
+    stringr::str_remove_all(",|\\(|\\)|\\.|\\[|\\]|'|\\-|\\\\|\\{|\\}|\\!|\\?") |> # This gets rid of annoying characters in the isolated title
+    stringr::str_match(pattern) |> # This properly isolated the Docket pattern requested
+    as_tibble()
+  return(isolation)
+}
+```
+
+
+```{r Testing Web Scrape}
+first_try <- read_html("https://caselaw.findlaw.com/us-supreme-court/20-826.html")
+test_text <-
+  first_try |>
+  html_nodes("p") |>
+  html_text2() |>
+  as_tibble()
+
+test_html <- "https://caselaw.findlaw.com/us-supreme-court/20-826.html"
+
+func_test <- opinion_pull(test_html, "test")
+```
+
+
+```{r Importing Extracted Court Case Links & Tidying Scraped Data}
+links_cases <- read_csv("data/court_cases_links_all.csv", show_col_types = FALSE)
+
+column_names <- LETTERS[seq(from = 1, to = 30)]
+
+# Separating Title Info
+links_cases_mod <-
+  links_cases |>
+  mutate(
+    n_year = stringr::str_extract(title, "\\(\\d\\d\\d\\d\\)"),
+    year = as.numeric(stringr::str_extract(n_year, "\\d\\d\\d\\d"))
+  )
+
+# Seperating Title Data to get to case tiltes
+case_title <- as_tibble(stringr::str_split(links_cases_mod$title, "\\d", simplify = TRUE)) |>
+  setNames(column_names)
+
+# Isolating Titles
+case_title <- case_title$A
+
+# Stripping and Removing articles for case title simplification
+case_title <-
+  case_title |>
+  stringr::str_remove_all(",|\\(|\\.|\\[|\\]|'|\\-|\\\\|\\{|\\}|\\!|\\?") |>
+  stringr::str_squish() |>
+  stringr::str_replace_all("[:blank:]", "_") |>
+  stringr::str_replace_all("&", "and") |>
+  stringr::str_to_lower() |>
+  as_tibble()
+
+# Isolating the Docket Number in the Scraped Title
+docket <- links_cases_mod$title
+
+# Text Patterns
+threethree <- "\\b\\d\\d\\d US \\d\\d\\d\\b"
+threefour <- "\\b\\d\\d\\d US \\d\\d\\d\\d\\b"
+twothree <- "\\b\\d\\d US \\d\\d\\d\\b"
+twotwo <- "\\b\\d\\d US \\d\\d\\b"
+threetwo <- "\\b\\d\\d\\d US \\d\\d\\b"
+threeone <- "\\b\\d\\d\\d US \\d\\b"
+twoone <- "\\b\\d\\d\\d US \\d\\b"
+oneone <- "\\b\\d US \\d\\b"
+
+# Isolated Based on a Docket Number of Three US Three
+docket_isolate_threethree <- docket_isolation(docket, threethree)
+
+# Isolated Based on a Docket Number of Three US Four
+docket_isolate_threefour <- docket_isolation(docket, threefour)
+
+# Isolated Based on a Docket Number of Two US Three
+docket_isolate_twothree <- docket_isolation(docket, twothree)
+
+# Isolated Based on a Docket Number of Two US Two
+docket_isolate_twotwo <- docket_isolation(docket, twotwo)
+
+# Isolated Based on a Docket Number of Three US Two
+docket_isolate_threetwo <- docket_isolation(docket, threetwo)
+
+# Isolated Based on a Docket Number of Three US One
+docket_isolate_threeone <- docket_isolation(docket, threeone)
+
+# Isolated Based on a Docket Number of Two US One
+docket_isolate_twoone <- docket_isolation(docket, twoone)
+
+# Isolated Based on a Docket Number of One US One
+docket_isolate_oneone <- docket_isolation(docket, oneone)
+
+# Using the Coalesce Function since there is not an overlap in Unique Docket Identifiers
+docket_build <- coalesce(
+  docket_isolate_threefour,
+  docket_isolate_threeone,
+  docket_isolate_threethree,
+  docket_isolate_threetwo,
+  docket_isolate_twothree,
+  docket_isolate_twotwo,
+  docket_isolate_twoone,
+  docket_isolate_oneone
+)
+
+# Adding Case Titles to Original Tibble
+links_cases_mod <-
+  links_cases_mod |>
+  bind_cols(case_title, docket_build) |>
+  rename(
+    case_titles = value,
+    docket_join = V1
+  ) |>
+  mutate(case_titles_combined = str_c(case_titles, year, sep = "_")) |>
+  filter(case_titles != "order_list" & !is.na(docket))
+
+# Arranging Cases for Final Dataset Prior to Pulling Data
+links_cases_final <-
+  links_cases_mod |>
+  transmute(link, case_titles_combined, year, case_titles, docket_join) |>
+  mutate(year = lubridate::year(lubridate::ymd(year, truncated = 2L)))
+
+write_rds(links_cases_final, "data/links_cases_final.rds", "gz", compression = 9L)
+```
+
+```{r}
+# Reading in Corgis Data
+supreme_court <- read_csv("data/supreme_court.csv", show_col_types = FALSE)
+
+# Modifying Docket on Corgis to match formatting for Join Purposes
+sc_edit <-
+  supreme_court |>
+  mutate(
+    docket_join =
+      citation.us |>
+        stringr::str_remove_all(",|\\(|\\.|\\[|\\]|'|\\-|\\\\|\\{|\\}|\\!|\\?")
+  )
+```
+
+<https://corgis-edu.github.io/corgis/csv/supreme_court/>
+Source for "supreme_court" read in data. A series of information about Supreme Court Cases that are not the opinions of the case but the summary information of the case
+
+```{r Joining Corgis Data Set with Final Scraped Data Set}
+
+# Since Final Links have been defined in a previous block
+# Final Links is loaded from the CSV to allow for this code to be run separately
+final_links <- read_rds("data/links_cases_final.rds")
+
+# Joining Corgis Dataset to Final Links
+final <-
+  final_links |>
+  inner_join(sc_edit, by = "docket_join")
+
+# Writing Joined Data Set to CSV for inspection
+write_rds(final, "data/sc_edit_joined.rds", "gz", compression = 9L)
+
+# Seperating Judgements into Ideology based on the Corgis dataset
+conservative_judgement <-
+  final |>
+  filter(decision.direction == "conservative")
+
+liberal_judgement <-
+  final |>
+  filter(decision.direction == "liberal")
+
+
+# Parsing Information for Opinion Pulls
+cons_links <- conservative_judgement$link
+cons_docket <- conservative_judgement$docket_join
+
+lib_links <- liberal_judgement$link
+lib_docket <- liberal_judgement$docket_join
+```
+
+```{r}
+# Pulling Conservative Opinions into a list as well as writing them to Disk
+cons_text <- clusterApply(cl, purrr::map2(.x = cons_links, .y = cons_docket, .f = cons_opinion_pull))
+
+# Pulling Liberal Opinions into a list as well as writing them to a Disk
+lib_text <- clusterApply(cl, purrr::map2(.x = lib_links, .y = lib_docket, .f = lib_opinion_pull))
+```

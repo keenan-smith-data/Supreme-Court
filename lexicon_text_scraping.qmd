@@ -1,0 +1,248 @@
+---
+title: "Lexicon Text Scraping"
+author: "Keenan Smith"
+format: html
+---
+
+```{r}
+#| label: Library Initiation
+
+library(tidyverse)
+library(rvest)
+
+source("scraping_functions.R")
+```
+
+
+```{r}
+#| label: Importing Cleaned Sitemaps
+
+jacobin <- read_rds("data/jacobin.rds")
+# thenation <- read_rds("data/thenation.rds")
+# claremont <- read_rds("data/claremontreviewessays.rds")
+features <- read_rds("data/americanmindfeatures.rds")
+memos <- read_rds("data/americanmindmemos.rds")
+salvos <- read_rds("data/americanmindsalvos.rds")
+h_commentary <- read_rds("data/heritage_commentary.rds")
+h_report <- read_rds("data/heritage_report.rds")
+b_blog <- read_rds("data/")
+```
+
+
+```{r}
+#| label: Test Links
+
+j_tl <- "https://jacobin.com/2022/07/we-still-have-to-take-donald-trump-seriously"
+j_tl_2 <- "https://jacobin.com/2022/07/ukraine-russia-war-debt-forgiveness-us-eu"
+j_tl_3 <- "https://jacobin.com/2022/06/american-exceptionalism-off-the-rails"
+j_tl_wrong <- "https://jacobin.com/2022/06/american-exceptionae-off-the-rails"
+
+h_com_tl <- "https://www.heritage.org/agriculture/commentary/conservative-farm-bill-must-include-major-subsidy-and-regulatory-reforms"
+h_com_tl_2 <- "https://www.heritage.org/africa/commentary/kenyan-forces-are-allowing-money-flow-terrorist-group-somalia"
+h_com_tl_3 <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-egregious-errors-award-prize-new-york-times-fatally"
+h_com_tl_wrong <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-eggious-errors-award-prize-new-york-times-fatally"
+
+h_rep_tl <- "https://www.heritage.org/agriculture/report/10-policy-recommendations-the-2018-farm-bill"
+h_rep_tl_2 <- "https://www.heritage.org/american-founders/report/independence-forever-the-225th-anniversary-the-fourth-july"
+h_rep_tl_3 <- "https://www.heritage.org/arms-control/report/arms-control-the-heritage-foundation-recommendations"
+h_rep_tl_wrong <- "https://www.heritage.org/arms-control/report/arms-cont-the-heritage-foundation-recommendations"
+
+b_tl <- "https://www.brookings.edu/research/chinas-role-in-supplying-critical-minerals-for-the-global-energy-transition-what-could-the-future-hold/"
+b_tl_2 <- "https://www.brookings.edu/blog/order-from-chaos/2020/03/19/taiwan-shows-its-mettle-in-coronavirus-crisis-while-the-who-is-mia/"
+b_tl_3 <- "https://www.brookings.edu/testimonies/iran-terrorism-and-weapons-of-mass-destruction/"
+
+b_test <- b_pull_tests(b_tl)
+b_test
+
+b_test_full <- b_pull_try(b_tl)
+b_test_2 <- b_pull_try(b_tl_2)
+b_test_3 <- b_pull_try(b_tl_3)
+
+j_test_vec <- c(j_tl, j_tl_2, j_tl_3)
+h_com_test_vec <- c(h_com_tl, h_com_tl_2, h_com_tl_3)
+h_rep_test_vec <- c(h_rep_tl, h_rep_tl_2, h_rep_tl_3)
+
+j_test_wrong <- c(j_tl_wrong, j_tl, j_tl_2, j_tl_3)
+h_com_test_wrong <- c(h_com_tl_wrong, h_com_tl, h_com_tl_2, h_com_tl_3)
+h_rep_test_wrong <- c(h_rep_tl_wrong, h_rep_tl, h_rep_tl_2, h_rep_tl_3)
+```
+
+
+<https://stackoverflow.com/questions/29402528/append-data-frames-together-in-a-for-loop>
+Absolute Legend of Help for R ways of doing loops
+
+```{r}
+#| label: Testing Iterations
+
+j_data_list <- list()
+h_com_data_list <- list()
+h_rep_data_list <- list()
+
+for (i in 1:3) {
+  j_test_df <- j_pull_try(j_test_vec[i])
+  j_test_df$i <- i
+  j_data_list[[i]] <- j_test_df
+  
+  h_com_test_df <- h_com_pull_try(h_com_test_vec[i])
+  h_com_test_df$i <- i
+  h_com_data_list[[i]] <- h_com_test_df
+  
+  h_rep_test_df <- h_rep_pull_try(h_rep_test_vec[i])
+  h_rep_test_df$i <- i
+  h_rep_data_list[[i]] <- h_rep_test_df
+}
+
+j_text_test <- bind_rows(j_data_list)
+h_com_text_test <- bind_rows(h_com_data_list)
+h_rep_text_test <- bind_rows(h_rep_data_list)
+```
+
+
+```{r}
+#| label: Testing Webscraping Loops
+
+j_wrong <- list()
+h_com_wrong <- list()
+h_rep_wrong <- list()
+
+for (i in seq_along(j_test_wrong)) {
+  j_test_df_wrong <- j_pull_try(j_test_wrong[i])
+  j_test_df_wrong$i <- i
+  j_wrong[[i]] <- j_test_df_wrong
+  
+  h_com_test_df_wrong <- h_com_pull_try(h_com_test_wrong[i])
+  h_com_test_df_wrong$i <- i
+  h_com_wrong[[i]] <- h_com_test_df_wrong
+  
+  h_rep_test_df_wrong <- h_rep_pull_try(h_rep_test_wrong[i])
+  h_rep_test_df_wrong$i <- i
+  h_rep_wrong[[i]] <- h_rep_test_df_wrong
+}
+
+j_text_wrong <- bind_rows(j_wrong)
+h_com_text_wrong <- bind_rows(h_com_wrong)
+h_rep_text_wrong <- bind_rows(h_rep_wrong)
+```
+
+
+```{r}
+#| label: Splitting and Sampling the Massive URL dataframes
+
+numbers <- c(1:10)
+
+j_list <- data_split(jacobin)
+h_com_list <- data_split(h_commentary)
+h_rep_list <- data_split(h_report)
+
+h_order <- sample(numbers, 10)
+j_order <- sample(numbers, 10)
+```
+
+
+```{r}
+#| label: Testing Web Scrapes
+
+am_mind_test <- am_mind_pull_try(am_mind_memo)
+am_mind_test_2 <- am_mind_pull_try(am_mind_salvo)
+am_mind_test_3 <- am_mind_pull_try(am_mind_feature)
+
+jac_test <- j_pull_tests(j_tl)
+jac_test_2 <- j_pull_try(j_tl_2)
+jac_test_3 <- j_pull_try(j_tl_3)
+
+her_test <- h_com_pull_try(h_com_tl)
+her_test_2 <- h_com_pull_try(h_com_tl_2)
+her_rep_test <- h_rep_pull_try(h_rep_l)
+```
+
+```{r}
+#| label: American Mind Webscraping
+
+memo_data_list <- map(.x = memos$url, .f = am_mind_pull_try)
+
+salvo_data_list <- map(.x = salvos$url, .f = am_mind_pull_try)
+
+feature_data_list <- map(.x = features$url, .f = am_mind_pull_try)
+```
+
+
+```{r}
+#| label: American Mind Bind
+
+memo_text <- bind_rows(memo_data_list)
+salvo_text <- bind_rows(salvo_data_list)
+feature_text <- bind_rows(feature_data_list)
+```
+
+
+```{r}
+#| label: Initiating Empty Lists for Loops
+
+j_data_list <- list()
+h_com_data_list <- list()
+h_rep_data_list <- list()
+```
+
+
+```{r}
+#| label: Massive Webscraping
+
+for (i in numbers) {
+  j_temp_df <- map_dfr(.x = j_list[[j_order[i]]]$url, .f = j_pull_try)
+  j_temp_df$i <- i
+  j_data_list[[i]] <- j_temp_df
+  
+  h_com_temp_df <- map_dfr(.x = h_com_list[[h_order[i]]]$url, .f = h_com_pull_try)
+  h_com_temp_df$i <- i
+  h_com_data_list[[i]] <- h_com_temp_df
+  
+  h_rep_temp_df <- map_dfr(.x = h_rep_list[[h_order[i]]]$url, .f = h_rep_pull_try)
+  h_rep_temp_df$i <- i
+  h_rep_data_list[[i]] <- h_rep_temp_df
+}
+```
+
+
+```{r}
+#| label: Binding Data Lists Together into a giant data frame
+
+jacobin_text <- bind_rows(j_data_list)
+h_com_text <- bind_rows(h_com_data_list)
+h_rep_text <- bind_rows(h_rep_data_list)
+```
+
+
+```{r}
+#| label: Adding Source and Writing Data to RDS
+
+memo_text <-
+  memo_text |>
+  mutate(text_source = "American Mind Memos")
+
+salvo_text <-
+  salvo_text |>
+  mutate(text_source = "American Mind Salvos")
+
+feature_text <-
+  feature_text |>
+  mutate(text_source = "American Mind Features")
+
+jacobin_text <-
+  jacobin_text |>
+  mutate(text_source = "Jacobin")
+
+h_com_text <-
+  heritage_com_text |>
+  mutate(text_source = "Heritage Commentary")
+
+h_rep_text <-
+  heritage_rep_text |>
+  mutate(text_source = "Heritage Report")
+
+write_rds(memo_text, "data/memo_text.rds", "gz", compression = 9L)
+write_rds(salvo_text, "data/salvo_text.rds", "gz", compression = 9L)
+write_rds(feature_text, "data/feature_text.rds", "gz", compression = 9L)
+write_rds(jacobin_text, "data/jacobin_text.rds", "gz", compression = 9L)
+write_rds(h_com_text, "data/heritage_com_text.rds", "gz", compression = 9L)
+write_rds(h_rep_text, "data/heritage_rep_text.rds", "gz", compression = 9L)
+```
