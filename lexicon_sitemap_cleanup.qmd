@@ -45,6 +45,7 @@ write_rds(jacobin_mod, "data/jacobin.rds", "gz", compression = 9L)
 
 ```{r}
 #| label: Brookings Sitemap
+#| eval: false
 
 # brookings_raw <- read_delim("~/brookings.csv", delim = ";", show_col_types = FALSE)
 # write_rds(brookings_raw, "data/brookings_raw.rds", "gz", compression = 9L)
@@ -297,7 +298,8 @@ write_rds(nr_pol, "data/nationalreview_pol_policy.rds", "gz", compression = 9L)
 
 ```{r}
 #| label: National Review Courts Sitemap
-#| 
+#| eval: false
+
 nr_law_courts_raw <- read_delim("C:/Users/slaps/OneDrive/Documents/Programming/Data/nationalreviewlawcourts.csv", delim = ";", show_col_types = FALSE)
 
 nr_law_courts <-

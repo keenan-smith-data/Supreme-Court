@@ -6,22 +6,6 @@ data_split <- function(data, n_groups = 10) {
   return(temp_list)
 }
 
-# Try Error Function
-pull_error <- function(cond, hyperlink) {
-  message(paste("This URL has caused an error:", hyperlink))
-  message(cond)
-  tibble::tibble(text = character(), art_title = character(), art_author = character(),
-                 art_date = lubridate::date("1970-01-01"), art_link = character())
-}
-
-# Try Warning Function
-pull_warning <- function(cond, hyperlink) {
-  message(paste("URL has a warning:", hyperlink))
-  message(cond)
-  tibble::tibble(text = character(), art_title = character(), art_author = character(),
-                 art_date = lubridate::date("1970-01-01"), art_link = character())
-}
-
 # American Mind Article Pull
 american_mind_pull <- function(hyperlink) {
   temp <- xml2::read_html(hyperlink)
@@ -36,11 +20,23 @@ american_mind_pull <- function(hyperlink) {
     rvest::html_nodes("a") |>
     rvest::html_text2()
   if (length(art_author) > 1) {
-    art_author = paste(art_author, collapse = ", ")
+    art_author <- paste(art_author, collapse = ", ")
   } else if (length(art_author) == 1) {
-    art_author = art_author
+    art_author <- art_author
   } else {
-    art_author = NA
+    art_author <- NA
+  }
+  art_topic <-
+    temp |>
+    rvest::html_elements(".tam__single-content-tags-box") |>
+    rvest::html_nodes("a") |>
+    rvest::html_text2()
+  if (length(art_topic) > 1) {
+    art_topic <- paste(art_topic, collapse = ", ")
+  } else if (length(art_topic) == 1) {
+    art_topic <- art_topic
+  } else {
+    art_topic <- NA
   }
   art_date <-
     temp |>
@@ -59,6 +55,7 @@ american_mind_pull <- function(hyperlink) {
       art_title = art_title,
       art_author = art_author,
       art_date = art_date,
+      art_topic = art_topic,
       art_link = art_link
     )
   return(text_data)
@@ -71,10 +68,20 @@ am_mind_pull_try <- function(hyperlink) {
       american_mind_pull(hyperlink)
     },
     error = function(cond) {
-      pull_error(cond, hyperlink)
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     warning = function(cond) {
-      pull_warning(cond, hyperlink)
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     finally = {
       message(paste("Processed URL:", hyperlink))
@@ -96,11 +103,22 @@ jacobin_pull <- function(hyperlink) {
     rvest::html_elements(css = ".po-hr-cn__author-link") |>
     rvest::html_text2()
   if (length(art_author) > 1) {
-    art_author = paste(art_author, collapse = ", ")
+    art_author <- paste(art_author, collapse = ", ")
   } else if (length(art_author) == 1) {
-    art_author = art_author
+    art_author <- art_author
   } else {
-    art_author = NA
+    art_author <- NA
+  }
+  art_topic <-
+    temp |>
+    rvest::html_elements(css = ".po-hr-fl__taxonomy") |>
+    rvest::html_text2()
+  if (length(art_topic) > 1) {
+    art_topic <- paste(art_topic, collapse = ", ")
+  } else if (length(art_topic) == 1) {
+    art_topic <- art_topic
+  } else {
+    art_topic <- NA
   }
   art_date <-
     temp |>
@@ -119,6 +137,7 @@ jacobin_pull <- function(hyperlink) {
       art_title = art_title,
       art_author = art_author,
       art_date = art_date,
+      art_topic = art_topic,
       art_link = art_link
     )
   return(text_data)
@@ -136,10 +155,20 @@ j_pull_try <- function(hyperlink) {
       jacobin_pull(hyperlink)
     },
     error = function(cond) {
-      pull_error(cond, hyperlink)
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     warning = function(cond) {
-      pull_warning(cond, hyperlink)
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     finally = {
       message(paste("Processed URL:", hyperlink))
@@ -150,7 +179,7 @@ j_pull_try <- function(hyperlink) {
 
 # Heritage Article Pull
 heritage_com_pull <- function(hyperlink) {
-  date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
+  date_formats <- "[:alpha:]+ [:graph:]+ [:digit:]+"
   authors <- c(".author-card__name", "author-card__multi-name")
   temp <- xml2::read_html(hyperlink)
   art_link <- hyperlink
@@ -168,17 +197,21 @@ heritage_com_pull <- function(hyperlink) {
     rvest::html_text2()
   art_author <- c(art_author_1, art_author_2)
   if (length(art_author) > 1) {
-    art_author = paste(art_author, collapse = ", ")
+    art_author <- paste(art_author, collapse = ", ")
   } else if (length(art_author) == 1) {
-    art_author = art_author
+    art_author <- art_author
   } else {
-    art_author = NA
+    art_author <- NA
   }
+  temp_topic <- hyperlink |>
+    stringr::str_split("/") |>
+    as_vector()
+  art_topic <- temp_topic[[4]]
   art_date <-
     temp |>
     rvest::html_elements(css = ".article-general-info") |>
     rvest::html_text2() |>
-    stringr::str_extract(paste(date_formats, collapse = "|")) |>
+    stringr::str_extract(date_formats) |>
     lubridate::mdy()
   text_data <-
     temp |>
@@ -191,6 +224,7 @@ heritage_com_pull <- function(hyperlink) {
       art_title = art_title,
       art_author = art_author,
       art_date = art_date,
+      art_topic = art_topic,
       art_link = art_link
     )
   return(text_data)
@@ -209,11 +243,11 @@ heritage_pull_test <- function(hyperlink) {
     rvest::html_text2()
   art_author <- c(art_author_1, art_author_2)
   if (length(art_author) > 1) {
-    art_author = paste(art_author, collapse = ", ")
+    art_author <- paste(art_author, collapse = ", ")
   } else if (length(art_author) == 1) {
-    art_author = art_author
+    art_author <- art_author
   } else {
-    art_author = NA
+    art_author <- NA
   }
   return(art_author)
 }
@@ -225,10 +259,20 @@ h_com_pull_try <- function(hyperlink) {
       heritage_com_pull(hyperlink)
     },
     error = function(cond) {
-      pull_error(cond, hyperlink)
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     warning = function(cond) {
-      pull_warning(cond, hyperlink)
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     finally = {
       message(paste("Processed URL:", hyperlink))
@@ -239,7 +283,7 @@ h_com_pull_try <- function(hyperlink) {
 
 # Heritage Article Pull
 heritage_rep_pull <- function(hyperlink) {
-  date_formats <- c("\\w\\w\\w \\d\\w\\w, \\d\\d\\d\\d", "\\w\\w\\w \\d\\d\\w\\w, \\d\\d\\d\\d")
+  date_formats <- "[:alpha:]+ [:graph:]+ [:digit:]+"
   temp <- xml2::read_html(hyperlink)
   art_link <- hyperlink
   art_title <-
@@ -247,11 +291,15 @@ heritage_rep_pull <- function(hyperlink) {
     rvest::html_elements(css = ".headline") |>
     rvest::html_text2()
   art_author <- "The Heritage Foundation"
+  temp_topic <- hyperlink |>
+    stringr::str_split("/") |>
+    as_vector()
+  art_topic <- temp_topic[[4]]
   art_date <-
     temp |>
     rvest::html_elements(css = ".article-general-info") |>
     rvest::html_text2() |>
-    stringr::str_extract(paste(date_formats, collapse = "|")) |>
+    stringr::str_extract(date_formats) |>
     lubridate::mdy()
   text_data <-
     temp |>
@@ -264,9 +312,22 @@ heritage_rep_pull <- function(hyperlink) {
       art_title = art_title,
       art_author = art_author,
       art_date = art_date,
+      art_topic = art_topic,
       art_link = art_link
     )
   return(text_data)
+}
+
+h_rep_tests <- function(hyperlink) {
+  date_formats <- "[:alpha:]+ [:graph:]+ [:digit:]+"
+  temp <- xml2::read_html(hyperlink)
+  art_date <-
+    temp |>
+    rvest::html_elements(css = ".article-general-info") |>
+    rvest::html_text2() |>
+    stringr::str_extract(date_formats) |>
+    lubridate::mdy()
+  return(art_date)
 }
 
 h_rep_pull_try <- function(hyperlink) {
@@ -276,10 +337,20 @@ h_rep_pull_try <- function(hyperlink) {
       heritage_rep_pull(hyperlink)
     },
     error = function(cond) {
-      pull_error(cond, hyperlink)
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     warning = function(cond) {
-      pull_warning(cond, hyperlink)
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     finally = {
       message(paste("Processed URL:", hyperlink))
@@ -301,11 +372,22 @@ brookings_pull <- function(hyperlink) {
     rvest::html_elements(css = ".names") |>
     rvest::html_text2()
   if (length(art_author) > 1) {
-    art_author = paste(art_author, collapse = ", ")
+    art_author <- paste(art_author, collapse = ", ")
   } else if (length(art_author) == 1) {
-    art_author = art_author
+    art_author <- art_author
   } else {
-    art_author = NA
+    art_author <- NA
+  }
+  art_topic <-
+    temp |>
+    rvest::html_elements(css = ".series-header") |>
+    rvest::html_text2()
+  if (length(art_topic) > 1) {
+    art_topic <- art_topic[[2]]
+  } else if (length(art_topic) == 1) {
+    art_topic <- art_topic
+  } else {
+    art_topic <- NA
   }
   art_date <-
     temp |>
@@ -323,19 +405,20 @@ brookings_pull <- function(hyperlink) {
       art_title = art_title,
       art_author = art_author,
       art_date = art_date,
+      art_topic = art_topic,
       art_link = art_link
     )
   return(text_data)
 }
 
 b_pull_tests <- function(hyperlink) {
-  temp <- rvest::read_html(hyperlink)
+  #  temp <- rvest::read_html(hyperlink)
   art_link <- hyperlink
-  art_title <-
-    temp |>
-    rvest::html_elements(css = ".page-content .report-title") |>
-    rvest::html_text2()
-  return(art_title)
+  temp_topic <- hyperlink |>
+    stringr::str_split("/") |>
+    as_vector()
+  art_topic <- temp_topic[[4]]
+  return(art_topic)
 }
 
 b_pull_try <- function(hyperlink) {
@@ -345,10 +428,20 @@ b_pull_try <- function(hyperlink) {
       brookings_pull(hyperlink)
     },
     error = function(cond) {
-      pull_error(cond, hyperlink)
+      message(paste("This URL has caused an error:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     warning = function(cond) {
-      pull_warning(cond, hyperlink)
+      message(paste("URL has a warning:", hyperlink))
+      message(cond)
+      tibble::tibble(
+        text = character(), art_title = character(), art_author = character(),
+        art_date = lubridate::date("1970-01-01"), art_link = character()
+      )
     },
     finally = {
       message(paste("Processed URL:", hyperlink))

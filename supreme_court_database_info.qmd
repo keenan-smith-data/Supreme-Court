@@ -34,16 +34,11 @@ sc_db_documentation <-
 sc_db_files_2021 <-
   sc_db_sitemap_trim |>
   filter(
-    str_detect(url, "_brickFiles/2021|/Legacy_06"),
-    str_detect(url, "\\.csv")
+    str_detect(url, "_brickFiles/2021|Legacy_07"),
+    str_detect(url, "Rdata")
   ) |>
   transmute(url) |>
-  as_vector()
-
-hyperlink <- sc_db_files_2021[[1]] |>
-  str_split("/") |>
-  as_vector()
-
+  pull()
 ```
 
 ```{r}

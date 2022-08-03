@@ -9,8 +9,6 @@ format: html
 
 library(tidyverse)
 library(rvest)
-
-source("scraping_functions.R")
 ```
 
 
@@ -18,45 +16,47 @@ source("scraping_functions.R")
 #| label: Importing Cleaned Sitemaps
 
 jacobin <- read_rds("data/jacobin.rds")
-# thenation <- read_rds("data/thenation.rds")
-# claremont <- read_rds("data/claremontreviewessays.rds")
 features <- read_rds("data/americanmindfeatures.rds")
 memos <- read_rds("data/americanmindmemos.rds")
 salvos <- read_rds("data/americanmindsalvos.rds")
 h_commentary <- read_rds("data/heritage_commentary.rds")
 h_report <- read_rds("data/heritage_report.rds")
-b_blog <- read_rds("data/")
+b_blog <- read_rds("data/brookings_blog.rds")
+
+source("scraping_functions.R")
 ```
 
 
 ```{r}
 #| label: Test Links
 
-j_tl <- "https://jacobin.com/2022/07/we-still-have-to-take-donald-trump-seriously"
-j_tl_2 <- "https://jacobin.com/2022/07/ukraine-russia-war-debt-forgiveness-us-eu"
-j_tl_3 <- "https://jacobin.com/2022/06/american-exceptionalism-off-the-rails"
+j_tl <- sample(jacobin$url, 1)
+j_tl_2 <- sample(jacobin$url, 1)
+j_tl_3 <- sample(jacobin$url, 1)
 j_tl_wrong <- "https://jacobin.com/2022/06/american-exceptionae-off-the-rails"
 
-h_com_tl <- "https://www.heritage.org/agriculture/commentary/conservative-farm-bill-must-include-major-subsidy-and-regulatory-reforms"
-h_com_tl_2 <- "https://www.heritage.org/africa/commentary/kenyan-forces-are-allowing-money-flow-terrorist-group-somalia"
-h_com_tl_3 <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-egregious-errors-award-prize-new-york-times-fatally"
+h_com_tl <- sample(h_commentary$url, 1)
+h_com_tl_2 <- sample(h_commentary$url, 1)
+h_com_tl_3 <- sample(h_commentary$url, 1)
 h_com_tl_wrong <- "https://www.heritage.org/american-founders/commentary/pulitzer-overlooks-eggious-errors-award-prize-new-york-times-fatally"
 
-h_rep_tl <- "https://www.heritage.org/agriculture/report/10-policy-recommendations-the-2018-farm-bill"
-h_rep_tl_2 <- "https://www.heritage.org/american-founders/report/independence-forever-the-225th-anniversary-the-fourth-july"
-h_rep_tl_3 <- "https://www.heritage.org/arms-control/report/arms-control-the-heritage-foundation-recommendations"
+h_rep_tl <- sample(h_report$url, 1)
+h_rep_tl_2 <- sample(h_report$url, 1)
+h_rep_tl_3 <- sample(h_report$url, 1)
 h_rep_tl_wrong <- "https://www.heritage.org/arms-control/report/arms-cont-the-heritage-foundation-recommendations"
 
-b_tl <- "https://www.brookings.edu/research/chinas-role-in-supplying-critical-minerals-for-the-global-energy-transition-what-could-the-future-hold/"
-b_tl_2 <- "https://www.brookings.edu/blog/order-from-chaos/2020/03/19/taiwan-shows-its-mettle-in-coronavirus-crisis-while-the-who-is-mia/"
-b_tl_3 <- "https://www.brookings.edu/testimonies/iran-terrorism-and-weapons-of-mass-destruction/"
+b_tl <- sample(b_blog$url, 1)
+b_tl_2 <- sample(b_blog$url, 1)
+b_tl_3 <- sample(b_blog$url, 1)
 
-b_test <- b_pull_tests(b_tl)
-b_test
+memo_tl <- sample(memos$url, 1)
+memo_tl_2 <- sample(memos$url, 1)
 
-b_test_full <- b_pull_try(b_tl)
-b_test_2 <- b_pull_try(b_tl_2)
-b_test_3 <- b_pull_try(b_tl_3)
+salvo_tl <- sample(salvos$url, 1)
+salvo_tl_2 <- sample(salvos$url, 1)
+
+feature_tl <- sample(features$url, 1)
+feature_tl <- sample(features$url, 1)
 
 j_test_vec <- c(j_tl, j_tl_2, j_tl_3)
 h_com_test_vec <- c(h_com_tl, h_com_tl_2, h_com_tl_3)
@@ -67,6 +67,27 @@ h_com_test_wrong <- c(h_com_tl_wrong, h_com_tl, h_com_tl_2, h_com_tl_3)
 h_rep_test_wrong <- c(h_rep_tl_wrong, h_rep_tl, h_rep_tl_2, h_rep_tl_3)
 ```
 
+```{r}
+#| label: Testing Web Scrapes
+
+b_test <- b_pull_try(b_tl)
+b_test_2 <- b_pull_try(b_tl_2)
+
+memo_test <- am_mind_pull_try(memo_tl)
+salvo_test_2 <- am_mind_pull_try(salvo_tl)
+feature_test_3 <- am_mind_pull_try(feature_tl)
+
+jac_test <- j_pull_try(j_tl)
+jac_test_2 <- j_pull_try(j_tl_2)
+jac_test_3 <- j_pull_try(j_tl_3)
+
+h_com_test <- h_com_pull_try(h_com_tl)
+h_com_test_2 <- h_com_pull_try(h_com_tl_2)
+
+
+h_rep_test <- h_rep_pull_try(h_rep_tl)
+h_rep_test_2 <- h_rep_pull_try(h_rep_tl_2)
+```
 
 <https://stackoverflow.com/questions/29402528/append-data-frames-together-in-a-for-loop>
 Absolute Legend of Help for R ways of doing loops
@@ -133,26 +154,11 @@ numbers <- c(1:10)
 j_list <- data_split(jacobin)
 h_com_list <- data_split(h_commentary)
 h_rep_list <- data_split(h_report)
+b_list <- data_split(b_blog)
 
 h_order <- sample(numbers, 10)
 j_order <- sample(numbers, 10)
-```
-
-
-```{r}
-#| label: Testing Web Scrapes
-
-am_mind_test <- am_mind_pull_try(am_mind_memo)
-am_mind_test_2 <- am_mind_pull_try(am_mind_salvo)
-am_mind_test_3 <- am_mind_pull_try(am_mind_feature)
-
-jac_test <- j_pull_tests(j_tl)
-jac_test_2 <- j_pull_try(j_tl_2)
-jac_test_3 <- j_pull_try(j_tl_3)
-
-her_test <- h_com_pull_try(h_com_tl)
-her_test_2 <- h_com_pull_try(h_com_tl_2)
-her_rep_test <- h_rep_pull_try(h_rep_l)
+b_order <- sample(numbers, 10)
 ```
 
 ```{r}
@@ -181,6 +187,7 @@ feature_text <- bind_rows(feature_data_list)
 j_data_list <- list()
 h_com_data_list <- list()
 h_rep_data_list <- list()
+b_data_list <- list()
 ```
 
 
@@ -199,6 +206,10 @@ for (i in numbers) {
   h_rep_temp_df <- map_dfr(.x = h_rep_list[[h_order[i]]]$url, .f = h_rep_pull_try)
   h_rep_temp_df$i <- i
   h_rep_data_list[[i]] <- h_rep_temp_df
+  
+  b_temp_df <- map_dfr(.x = b_list[[b_order[i]]]$url, .f = b_pull_try)
+  b_temp_df$i <- i
+  b_data_list[[i]] <- b_temp_df
 }
 ```
 
@@ -209,6 +220,7 @@ for (i in numbers) {
 jacobin_text <- bind_rows(j_data_list)
 h_com_text <- bind_rows(h_com_data_list)
 h_rep_text <- bind_rows(h_rep_data_list)
+b_text <- bind_rows(b_data_list)
 ```
 
 

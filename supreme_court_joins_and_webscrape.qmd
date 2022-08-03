@@ -2,7 +2,6 @@
 title: "Supreme Court Joins and Webscrape"
 author: "Keenan Smith"
 format: html
-editor: visual
 ---
 
 ```{r Library Initiation}

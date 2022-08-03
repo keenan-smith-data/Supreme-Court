@@ -12,8 +12,9 @@ library(rvest)
 
 ```{r}
 b_report_pdf_pull <- function(hyperlink) {
-  hyperlink_title <- stringr::str_split(hyperlink, "/")
-  title <- hyperlink_title[[1]][8]
+  hyperlink_title <- stringr::str_split(hyperlink, "/") |>
+    as_vector()
+  title <- hyperlink_title[[8]]
   report_title <- stringr::str_c("~/brookings_reports/", title)
   download.file(hyperlink, report_title, mode = "wb")
   raw_text <- pdftools::pdf_text(report_title)
