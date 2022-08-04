@@ -6,6 +6,96 @@ data_split <- function(data, n_groups = 10) {
   return(temp_list)
 }
 
+# Function for Testing if Data is Valid from scrape
+scrape_check <- function(df) {
+  if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    message("Data Valid")
+  } else if (length(df) == 0 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    warning("No Valid Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == FALSE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    warning("Issue w/ Text Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == FALSE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    warning("Issue w/ Title Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == FALSE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    warning("Issue w/ Author Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == FALSE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    warning("Issue w/ Date Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == FALSE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == TRUE) {
+    warning("Issue w/ Topic Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == FALSE &
+    is.character(df$art_source) == TRUE) {
+    warning("Issue w/ Link Data")
+  } else if (length(df) >= 1 &
+    is.character(df$text) == TRUE &
+    is.character(df$art_title) == TRUE &
+    is.character(df$art_author) == TRUE &
+    lubridate::is.Date(df$art_date) == TRUE &
+    is.character(df$art_topic) == TRUE &
+    is.character(df$art_link) == TRUE &
+    is.character(df$art_source) == FALSE) {
+    warning("Issue w/ Source Data")
+  } else {
+    (
+      warning("Nothing is Initialized, Link is probably bad")
+    )
+  }
+}
+
 # American Mind Article Pull
 american_mind_pull <- function(hyperlink) {
   temp <- xml2::read_html(hyperlink)
@@ -36,7 +126,7 @@ american_mind_pull <- function(hyperlink) {
   } else if (length(art_topic) == 1) {
     art_topic <- art_topic
   } else {
-    art_topic <- NA
+    art_topic <- "Memo"
   }
   art_date <-
     temp |>
@@ -56,8 +146,11 @@ american_mind_pull <- function(hyperlink) {
       art_author = art_author,
       art_date = art_date,
       art_topic = art_topic,
-      art_link = art_link
+      art_link = art_link,
+      art_source = "American Mind"
     )
+  rm(temp)
+  scrape_check(text_data)
   return(text_data)
 }
 
@@ -84,8 +177,8 @@ am_mind_pull_try <- function(hyperlink) {
       )
     },
     finally = {
-      message(paste("Processed URL:", hyperlink))
-      Sys.sleep(5)
+      message(paste("\nProcessed URL:", hyperlink))
+      #      Sys.sleep(5)
     }
   )
 }
@@ -107,7 +200,7 @@ jacobin_pull <- function(hyperlink) {
   } else if (length(art_author) == 1) {
     art_author <- art_author
   } else {
-    art_author <- NA
+    art_author <- "Jacobin"
   }
   art_topic <-
     temp |>
@@ -138,8 +231,11 @@ jacobin_pull <- function(hyperlink) {
       art_author = art_author,
       art_date = art_date,
       art_topic = art_topic,
-      art_link = art_link
+      art_link = art_link,
+      art_source = "Jacobin"
     )
+  rm(temp)
+  scrape_check(text_data)
   return(text_data)
 }
 
@@ -171,8 +267,8 @@ j_pull_try <- function(hyperlink) {
       )
     },
     finally = {
-      message(paste("Processed URL:", hyperlink))
-      Sys.sleep(5)
+      message(paste("\nProcessed URL:", hyperlink))
+      #      Sys.sleep(5)
     }
   )
 }
@@ -201,7 +297,7 @@ heritage_com_pull <- function(hyperlink) {
   } else if (length(art_author) == 1) {
     art_author <- art_author
   } else {
-    art_author <- NA
+    art_author <- "Heritage Foundation"
   }
   temp_topic <- hyperlink |>
     stringr::str_split("/") |>
@@ -225,8 +321,11 @@ heritage_com_pull <- function(hyperlink) {
       art_author = art_author,
       art_date = art_date,
       art_topic = art_topic,
-      art_link = art_link
+      art_link = art_link,
+      art_source = "Heritage Commentary"
     )
+  rm(temp)
+  scrape_check(text_data)
   return(text_data)
 }
 
@@ -275,8 +374,8 @@ h_com_pull_try <- function(hyperlink) {
       )
     },
     finally = {
-      message(paste("Processed URL:", hyperlink))
-      Sys.sleep(5)
+      message(paste("\nProcessed URL:", hyperlink))
+      #      Sys.sleep(5)
     }
   )
 }
@@ -290,7 +389,23 @@ heritage_rep_pull <- function(hyperlink) {
     temp |>
     rvest::html_elements(css = ".headline") |>
     rvest::html_text2()
-  art_author <- "The Heritage Foundation"
+  art_author_1 <-
+    temp |>
+    rvest::html_nodes(".contributor-card") |>
+    rvest::html_text2() |>
+    str_remove("Authors: ")
+  art_author_2 <-
+    temp |>
+    rvest::html_nodes(".expert-card__expert-name") |>
+    rvest::html_text2()
+  art_author <- c(art_author_1, art_author_2)
+  if (length(art_author) > 1) {
+    art_author <- paste(art_author, collapse = ", ")
+  } else if (length(art_author) == 1) {
+    art_author <- art_author
+  } else {
+    art_author <- "Heritage Foundation"
+  }
   temp_topic <- hyperlink |>
     stringr::str_split("/") |>
     as_vector()
@@ -313,21 +428,34 @@ heritage_rep_pull <- function(hyperlink) {
       art_author = art_author,
       art_date = art_date,
       art_topic = art_topic,
-      art_link = art_link
+      art_link = art_link,
+      art_source = "Heritage Report"
     )
+  rm(temp)
+  scrape_check(text_data)
   return(text_data)
 }
 
 h_rep_tests <- function(hyperlink) {
-  date_formats <- "[:alpha:]+ [:graph:]+ [:digit:]+"
   temp <- xml2::read_html(hyperlink)
-  art_date <-
+  art_author_1 <-
     temp |>
-    rvest::html_elements(css = ".article-general-info") |>
+    rvest::html_nodes(".contributor-card") |>
     rvest::html_text2() |>
-    stringr::str_extract(date_formats) |>
-    lubridate::mdy()
-  return(art_date)
+    str_remove("Authors: ")
+  art_author_2 <-
+    temp |>
+    rvest::html_nodes(".expert-card__expert-name") |>
+    rvest::html_text2()
+  art_author <- c(art_author_1, art_author_2)
+  if (length(art_author) > 1) {
+    art_author <- paste(art_author, collapse = ", ")
+  } else if (length(art_author) == 1) {
+    art_author <- art_author
+  } else {
+    art_author <- "Heritage Foundation"
+  }
+  return(art_author)
 }
 
 h_rep_pull_try <- function(hyperlink) {
@@ -353,8 +481,8 @@ h_rep_pull_try <- function(hyperlink) {
       )
     },
     finally = {
-      message(paste("Processed URL:", hyperlink))
-      Sys.sleep(5)
+      message(paste("\nProcessed URL:", hyperlink))
+      #      Sys.sleep(5)
     }
   )
 }
@@ -376,7 +504,7 @@ brookings_pull <- function(hyperlink) {
   } else if (length(art_author) == 1) {
     art_author <- art_author
   } else {
-    art_author <- NA
+    art_author <- "Brookings Institute"
   }
   art_topic <-
     temp |>
@@ -387,7 +515,10 @@ brookings_pull <- function(hyperlink) {
   } else if (length(art_topic) == 1) {
     art_topic <- art_topic
   } else {
-    art_topic <- NA
+    temp_topic <- hyperlink |>
+      stringr::str_split("/") |>
+      as_vector()
+    art_topic <- temp_topic[[5]]
   }
   art_date <-
     temp |>
@@ -406,8 +537,11 @@ brookings_pull <- function(hyperlink) {
       art_author = art_author,
       art_date = art_date,
       art_topic = art_topic,
-      art_link = art_link
+      art_link = art_link,
+      art_source = "Brookings Institute"
     )
+  rm(temp)
+  scrape_check(text_data)
   return(text_data)
 }
 
@@ -417,7 +551,7 @@ b_pull_tests <- function(hyperlink) {
   temp_topic <- hyperlink |>
     stringr::str_split("/") |>
     as_vector()
-  art_topic <- temp_topic[[4]]
+  art_topic <- temp_topic[[5]]
   return(art_topic)
 }
 
@@ -444,8 +578,8 @@ b_pull_try <- function(hyperlink) {
       )
     },
     finally = {
-      message(paste("Processed URL:", hyperlink))
-      Sys.sleep(5)
+      message(paste("\nProcessed URL:", hyperlink))
+      #      Sys.sleep(5)
     }
   )
 }
