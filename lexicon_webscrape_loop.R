@@ -37,28 +37,28 @@ b_data_list <- list()
 for (i in numbers) {
   j_temp <- map(.x = j_list[[j_order[i]]]$url, .f = j_pull_try)
   j_temp_df <- bind_rows(j_temp)
-  j_title <- stringr::str_c("data/jacobin_iteration_", i, ".rds")
+  j_title <- stringr::str_c("data/iterations/jacobin_iteration_", i, ".rds")
   readr::write_rds(j_temp_df, file = j_title, "gz", compression = 9L)
   j_temp_df$i <- i
   j_data_list[[i]] <- j_temp_df
 
   h_com_temp <- map(.x = h_com_list[[h_order[i]]]$url, .f = h_com_pull_try)
   h_com_temp_df <- bind_rows(h_com_temp)
-  h_com_title <- stringr::str_c("data/h_com_iteration_", i, ".rds")
+  h_com_title <- stringr::str_c("data/iterations/h_com_iteration_", i, ".rds")
   readr::write_rds(h_com_temp_df, file = h_com_title, "gz", compression = 9L)
   h_com_temp_df$i <- i
   h_com_data_list[[i]] <- h_com_temp_df
 
   h_rep_temp <- map(.x = h_rep_list[[h_order[i]]]$url, .f = h_rep_pull_try)
   h_rep_temp_df <- bind_rows(h_rep_temp)
-  h_rep_title <- stringr::str_c("data/h_rep_iteration_", i, ".rds")
+  h_rep_title <- stringr::str_c("data/iterations/h_rep_iteration_", i, ".rds")
   readr::write_rds(h_rep_temp_df, file = h_rep_title, "gz", compression = 9L)
   h_rep_temp_df$i <- i
   h_rep_data_list[[i]] <- h_rep_temp_df
 
   b_temp <- map(.x = b_list[[b_order[i]]]$url, .f = b_pull_try)
   b_temp_df <- bind_rows(b_temp)
-  b_title <- stringr::str_c("data/brookings_iteration_", i, ".rds")
+  b_title <- stringr::str_c("data/iterations/brookings_iteration_", i, ".rds")
   readr::write_rds(b_temp_df, file = b_title, "gz", compression = 9L)
   b_temp_df$i <- i
   b_data_list[[i]] <- b_temp_df
