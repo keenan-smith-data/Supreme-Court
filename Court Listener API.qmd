@@ -1,0 +1,62 @@
+---
+title: "Court Listener API"
+author: "Keenan Smith"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(httr)
+library(jsonlite)
+here::i_am("Court Listener API.qmd")
+library(here)
+```
+
+```{r}
+header_name <- "Authorization"
+token <- "Authorization: Token 18e46d28ff8f30dac853daea665f28b2d2d788ab"
+```
+
+
+```{r}
+call1 <- "https://www.courtlistener.com/api/rest/v3/clusters/"
+call2 <- "https://www.courtlistener.com/api/rest/v3/opinions/?cluster__docket__court__id=scotus"
+call3 <- "https://www.courtlistener.com/api/rest/v3/opinions/?cluster__docket__court__id=scotus&page=2"
+
+```
+
+```{r}
+authorization <- GET(call1, add_headers(token))
+
+opinions <- GET(call2)
+
+api_auth <- function(link, header) {
+  authorization <- httr::GET(link, add_headers(header))
+}
+
+api_pull <- function(link) {
+  temp <- httr::GET(link)
+  temp_text <- httr::content(temp, "text")
+  temp_json <- jsonlite::fromJSON(temp_text, flatten = TRUE)
+  return(temp_json)
+}
+```
+
+```{r}
+
+get_opinions_text <- content(opinions, "text")
+
+
+
+opinions_text <- fromJSON(get_opinions_text, flatten = TRUE)
+
+op_tibble <- as_tibble(opinions_text$results)
+
+testing <- 
+  op_tibble$html_with_citations[[1]] |>
+  xml2::read_html() |>
+  rvest::html_text2() |>
+  stringr::str_squish()
+
+```
+
