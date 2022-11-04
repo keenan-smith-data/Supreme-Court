@@ -1,0 +1,27 @@
+---
+title: "Trafilatura RSS Feeds"
+author: "Keenan Smith"
+format: html
+jupyter: python3
+---
+
+```{python}
+from trafilatura import sitemaps, feeds, spider
+```
+
+
+```{python}
+guardian = "https://www.theguardian.com/"
+
+guardian_feed_list = sitemaps.sitemap_search(guardian) 
+
+len(guardian_feed_list)
+
+```
+
+```{python}
+guardian_crawl = spider.focused_crawler(guardian)
+```
+
+
+
