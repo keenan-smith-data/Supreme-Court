@@ -10,13 +10,8 @@ library(httr)
 library(jsonlite)
 here::i_am("Court Listener API.qmd")
 library(here)
+source("tokens.R")
 ```
-
-```{r}
-header_name <- "Authorization"
-token <- "Authorization: Token 18e46d28ff8f30dac853daea665f28b2d2d788ab"
-```
-
 
 ```{r}
 call1 <- "https://www.courtlistener.com/api/rest/v3/clusters/"
